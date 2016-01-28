@@ -1,8 +1,11 @@
 __author__ = 'mosin'
-import _connection
+import queries
 import core.rdb
 
-muscle = _connection.Mysql("localhost", "root", "mysql", "test")
+
+db = MySQLdb.connect(host=host, user=login,
+                     passwd=password, db=db_name)
+muscle = queries.Mysql("localhost", "root", "mysql", "test")
 
 #----------------------------------#
 counter = muscle.count_attributes(table="employee",
@@ -59,5 +62,3 @@ for fd in database._schema.functional_dependencies:
     #print "left = " + str(fd[0])
     #print "right = " + str(fd[1])
 del muscle
-
-

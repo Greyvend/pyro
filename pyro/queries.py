@@ -1,10 +1,5 @@
-#from _mysql_exceptions import OperationalError
-
-__author__ = 'mosin'
-
-
-class Relation:
-    """Abstraction for relational table information"""
+import MySQLdb
+from _mysql_exceptions import OperationalError
 
 
 class Dbms:
@@ -103,8 +98,6 @@ class Mysql(Dbms):
     OperationalError = None
 
     def __init__(self, host, login, password, db):
-        import MySQLdb
-        from _mysql_exceptions import OperationalError
         self._db = MySQLdb.connect(host=host, user=login,
                                    passwd=password, db=db)
         self._name = db

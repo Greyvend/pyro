@@ -1,11 +1,10 @@
-__author__ = 'mosin'
-import rdb
 from itertools import combinations
 
 
-def islossy(db, relation_names):
+def is_lossless(db, relation_names):
     """
-    Check whether lossless join property of database is completed
+    Check whether lossless join property of database is held
+
     @param db: rdb.Rdb object, representing database
     @param relation_names: list of rdb.relation objects
     @return: True if connection without losses is held on current context
@@ -150,7 +149,7 @@ def contexts(db, relation_names):
         name_packs_to_add = combinations(prioritized_relation_names, k)
         for names in name_packs_to_add:
             context = relation_names + names
-            if islossy(db, context):
+            if is_lossless(db, context):
                 result.append(context)
 
 # >>> student_tuples = [

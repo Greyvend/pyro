@@ -1,7 +1,7 @@
 __author__ = 'mosin'
 from collections import namedtuple
 
-import _connection
+import queries
 
 
 # FunctionalDependency = namedtuple(typename="FunctionalDependency",
@@ -35,8 +35,8 @@ multi_valued_dependencies - set of MVDs of database schema
 class Rdb:
     def __init__(self, dbms, host, login, password, db):
         self._db_connection = {
-            "mysql": _connection.Mysql(host, login, password, db),
-            "oracle": _connection.Dbms()}[dbms]
+            "mysql": queries.Mysql(host, login, password, db),
+            "oracle": queries.Dbms()}[dbms]
         self._schema = Schema(relations=[],
                               functional_dependencies=set(),
                               multi_valued_dependencies=set())

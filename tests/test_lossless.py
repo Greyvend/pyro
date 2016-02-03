@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from pyro.lossless import _build_tableau
+from pyro.lossless import _build_tableau, is_lossless, min_dict
 
 
 class TestBuildTableau(TestCase):
@@ -50,3 +50,35 @@ class TestBuildTableau(TestCase):
         self.assertEqual(tableau[1]['B'], 'B')
         self.assertEqual(tableau[1]['C'], 'C')
         self.assertEqual(tableau[1]['D'], 'D')
+
+
+class TestMinDict(TestCase):
+    def test_same(self):
+        d1 = {'A': ('A',), 'B': ('B', 3)}
+        d2 = {'B': ('B', 3), 'A': ('A',)}
+        self.assertEqual(min_dict(d1, d2), d1)
+        self.assertEqual(min_dict(d1, d2), d2)
+
+
+class TestIsLossless(TestCase):
+    def test_cartesian_product_no_deps(self):
+        r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C', 'D'}}
+        deps = []
+        self.assertFalse(is_lossless([r1, r2], deps))
+
+    def test_cartesian_product_separate_deps(self):
+        r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C', 'D'}}
+        deps = [{'left': ('A',), 'right': ('B',)},
+                {'left': ('C',), 'right': ('D',)}]
+        self.assertFalse(is_lossless([r1, r2], deps))
+
+    def test_intersecting_deps(self):
+        """
+        Test chase algorithm in the case when dependencies cross relations
+        """
+        r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C', 'D'}}
+        deps = [{'left': ('A',), 'right': ('C',)}]
+        self.assertTrue(is_lossless([r1, r2], deps))

@@ -1,4 +1,5 @@
-from operator import iadd
+from functools import partial
+from itertools import groupby
 
 
 def _build_tableau(relations):
@@ -12,6 +13,36 @@ def _build_tableau(relations):
     return tableau
 
 
+def min_dict(d1, d2):
+    """
+    Based on two input dictionaries build third one with all the values set to
+    minimum of `d1`, `d2` across the common keys
+
+    :param d1: first input dict
+    :param d2: second input dict
+    """
+    result = {}
+    intersected_keys = set(d1) and set(d2)
+    for key in intersected_keys:
+        result[key] = min(d1[key], d2[key])
+    return result
+
+
+def equal(iterable):
+    first = iterable[0]
+    for item in iterable[1:]:
+        if cmp(first, item) != 0:
+            return False
+    return True
+
+
+def is_clear(d):
+    for k, v in d.iteritems():
+        if len(v) != 1:
+            return False
+    return True
+
+
 def is_lossless(relations, deps):
     """
     Check whether lossless join property of database is held
@@ -21,84 +52,24 @@ def is_lossless(relations, deps):
         relations
     :return: True if connection without losses is held on current context
     """
-
-    def modify(working_table, left_indices, right_index):
-        """
-        Make certain modifications in working_table, according to lossless join
-        algorithm.
-        @param in out working_table: algorithm table structure to be
-        modified
-        @param left_indices: indices of attributes to be checked for
-        equality
-        @param right_index: index of attribute to be assigned values for
-        all matched rows
-        @return: True if some modification occured, False else
-        """
-        changed = False
-        for i, row in enumerate(working_table):
-            matching = [i]
-            seed = i
-
-            #Search for relations
-            for j, lookup_row in enumerate(working_table[i + 1:]):
-                for l_index in left_indices:
-                    if lookup_row[l_index] != row[l_index]:
-                        break
-                else: #if break wasn't executed
-                    matching.append(j)
-                    if lookup_row[right_index][0] == "a":
-                        seed = j
-
-            #Assign rows
-            if len(matching) > 1:
-                for index in matching:
-                    if index != seed:
-                        working_table[index][right_index] = \
-                            working_table[seed][right_index]
-                if not changed:
-                    changed = True
-        return changed
-
-    def is_string_with_a(working_table):
-        """
-        check if the lossless join condition is held
-        @param working_table: algorithm table structure to be
-        modified
-        @return: True if there is string with only "a" in some row
-        """
-        for row in working_table:
-            for elem in row:
-                if elem[0] != "a":
-                    break
-            else:
-                return True
-        return False
-
-    all_attrs = db.all_attributes(relation_names)
-    deps = db.dependencies(relation_names)
-
-    #Initial table filling
     tableau = _build_tableau(relations)
-    working_table = []
-    for i in range(len(relation_names)):
-        working_table.append([])
-        for j in range(len(all_attrs)):
-            if db.has_attr(relation_names[i], all_attrs[j]):
-                working_table[i].append(("a", j))
-            else:
-                working_table[i].append(("b", i, j))
 
-    #Main algorithm job
     changed = True
     while changed:
         changed = False
         for dep in deps:
-            left_indices = tuple(all_attrs.index(elem)
-                                 for elem in dep.left())
-            right_index = all_attrs.index(dep.right())
-
-            changed_now = modify(working_table, left_indices, right_index)
-            changed = changed or changed_now
-            if is_string_with_a(working_table):
-                return True
+            def project(d, keys): return {k: d[k] for k in keys}
+            dep_left = partial(project, keys=dep['left'])
+            dep_right = partial(project, keys=dep['right'])
+            tableau = sorted(tableau, key=dep_left)
+            for k, group in groupby(tableau, key=dep_left):
+                values_to_change = map(dep_right, group)
+                if not equal(values_to_change):
+                    changed = True
+                    group_min = reduce(min_dict, values_to_change)
+                    for row in group:
+                        row.update(group_min)
+                    clear_rows = filter(is_clear, group)
+                    if clear_rows:
+                        return True
     return False

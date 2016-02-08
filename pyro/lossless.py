@@ -63,6 +63,7 @@ def is_lossless(relations, deps):
             dep_right = partial(project, keys=dep['right'])
             tableau = sorted(tableau, key=dep_left)
             for k, group in groupby(tableau, key=dep_left):
+                group = list(group)
                 values_to_change = map(dep_right, group)
                 if not equal(values_to_change):
                     changed = True

@@ -88,11 +88,53 @@ class TestIsLossless(TestCase):
                 {'left': ('C',), 'right': ('D',)}]
         self.assertFalse(is_lossless([r1, r2], deps))
 
-    def test_intersecting_deps(self):
+    def test_simplest_case(self):
         """
-        Test chase algorithm in the case when dependencies cross relations
+        Test chase algorithm in the simplest succeeding case with single
+        dependency held on same attribute value
+        """
+        r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}}
+        r2 = {'name': 'R2', 'attributes': {'C', 'D'}}
+        deps = [{'left': ('C',), 'right': ('D',)}]
+        self.assertTrue(is_lossless([r1, r2], deps))
+
+    def test_advanced(self):
+        """
+        This example was taken from the Ullman's "Database Systems - The
+        Complete book"
+        """
+        r1 = {'name': 'R1', 'attributes': {'A', 'D'}}
+        r2 = {'name': 'R2', 'attributes': {'A', 'C'}}
+        r3 = {'name': 'R3', 'attributes': {'B', 'C', 'D'}}
+        deps = [
+            {'left': ('A',), 'right': ('B',)},
+            {'left': ('B',), 'right': ('C',)},
+            {'left': ('C', 'D'), 'right': ('A',)},
+        ]
+        self.assertTrue(is_lossless([r1, r2, r3], deps))
+
+    def test_advanced_lossless_not_held(self):
+        """
+        This example was also taken from the Ullman's "Database Systems - The
+        Complete book"
         """
         r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
-        r2 = {'name': 'R2', 'attributes': {'C', 'D'}}
-        deps = [{'left': ('A',), 'right': ('C',)}]
-        self.assertTrue(is_lossless([r1, r2], deps))
+        r2 = {'name': 'R2', 'attributes': {'B', 'C'}}
+        r3 = {'name': 'R3', 'attributes': {'C', 'D'}}
+        deps = [
+            {'left': ('B',), 'right': ('A', 'D')}
+        ]
+        self.assertFalse(is_lossless([r1, r2, r3], deps))
+
+    def test_separate_deps_common_attributes(self):
+        """
+        Check the case when relations intersect over some attributes but don't
+        have any dependencies uniting them
+        """
+        r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}}
+        r2 = {'name': 'R2', 'attributes': {'B', 'D', 'E'}}
+        deps = [
+            {'left': ('A', 'B'), 'right': ('C',)},  # R1 primary key
+            {'left': ('B', 'D'), 'right': ('E',)},  # R2 primary key
+        ]
+        self.assertFalse(is_lossless([r1, r2], deps))

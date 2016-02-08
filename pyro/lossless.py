@@ -42,8 +42,14 @@ def all_equal(iterable):
     return True
 
 
-def is_clear(d):
-    for k, v in d.iteritems():
+def is_clear(row):
+    """
+    Check that provided tableau row consists only of simple values
+
+    :param row: dictionary representing a tableau row
+    :return: True if the row contains all simple values, False otherwise
+    """
+    for k, v in row.iteritems():
         if len(v) != 1:
             return False
     return True

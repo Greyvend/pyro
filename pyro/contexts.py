@@ -1,12 +1,14 @@
 from itertools import combinations
 
+from pyro.lossless import is_lossless
+
 
 def closure(attributes, dependencies):
     """
     count attribute closure according to given functional dependencies
-    @param attributes: attributes to count closure of
-    @param dependencies: deps of database, that form closure
-    @return: set of attributes, contained in closure
+    :param attributes: attributes to count closure of
+    :param dependencies: deps of database, that form closure
+    :return: set of attributes, contained in closure
     """
     result = set(attributes)
 
@@ -26,8 +28,8 @@ def contexts(db, relation_names):
     def subsets_basic_pk(relation_name):
         """
         check, whether relation data subsets one of base relation by it's pk
-        @param relation_name: relation to be compared
-        @return: True if it does subset, False else
+        :param relation_name: relation to be compared
+        :return: True if it does subset, False else
         """
         for base_name in relation_names:
             if db.inclusion_dependency(relation_name, base_name, db.primary(
@@ -61,12 +63,3 @@ def contexts(db, relation_names):
             context = relation_names + names
             if is_lossless(db, context):
                 result.append(context)
-
-# >>> student_tuples = [
-#     ('john', 'A', 15),
-#     ('jane', 'B', 12),
-#     ('dave', 'B', 10),
-#     ]
-# >>> sorted(student_tuples, key=lambda student: student[2])   # sort by age
-# [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
-

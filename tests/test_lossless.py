@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from pyro.lossless import _build_tableau, is_lossless, min_dict
+from pyro.lossless import _build_tableau, is_lossless, min_dict, all_equal
 
 
 class TestBuildTableau(TestCase):
@@ -72,6 +72,29 @@ class TestMinDict(TestCase):
         d1 = {'A': ('A',), 'B': ('B', 3), 'C': ('C', 1)}
         d2 = {'A': ('A', 1), 'B': ('B', 2), 'D': ('D', 3)}
         self.assertEqual(min_dict(d1, d2), {'A': ('A',), 'B': ('B', 2)})
+
+
+class TestEqual(TestCase):
+    def test_single_value(self):
+        """
+        Check the case when only one value is supplied
+        """
+        values = [{'key': 'value'}]
+        self.assertTrue(all_equal(values))
+
+    def test_success(self):
+        """
+        Check the case with several equal values
+        """
+        values = [{'key': 'value'}, {'key': 'value'}]
+        self.assertTrue(all_equal(values))
+
+    def test_failure(self):
+        """
+        Check the case with several different values
+        """
+        values = [{'key': 'value'}, {'key': 'another_value'}]
+        self.assertFalse(all_equal(values))
 
 
 class TestIsLossless(TestCase):

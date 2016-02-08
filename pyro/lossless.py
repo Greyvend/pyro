@@ -28,7 +28,13 @@ def min_dict(d1, d2):
     return result
 
 
-def equal(iterable):
+def all_equal(iterable):
+    """
+    Check that all values of iterable are equal
+
+    :param iterable: any iterable
+    :return: True if all values are equal, False otherwise
+    """
     first = iterable[0]
     for item in iterable[1:]:
         if cmp(first, item) != 0:
@@ -65,7 +71,7 @@ def is_lossless(relations, deps):
             for k, group in groupby(tableau, key=dep_left):
                 group = list(group)
                 values_to_change = map(dep_right, group)
-                if not equal(values_to_change):
+                if not all_equal(values_to_change):
                     changed = True
                     group_min = reduce(min_dict, values_to_change)
                     for row in group:

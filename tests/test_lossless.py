@@ -54,10 +54,24 @@ class TestBuildTableau(TestCase):
 
 class TestMinDict(TestCase):
     def test_same(self):
+        """
+        Check that calling the routine on dicts with same key/values in
+        different order results in either of those dicts
+        """
         d1 = {'A': ('A',), 'B': ('B', 3)}
         d2 = {'B': ('B', 3), 'A': ('A',)}
         self.assertEqual(min_dict(d1, d2), d1)
         self.assertEqual(min_dict(d1, d2), d2)
+
+    def test_different_keys(self):
+        d1 = {'A': ('A',), 'B': ('B', 3)}
+        d2 = {'C': ('C', 1), 'D': ('D',)}
+        self.assertEqual(min_dict(d1, d2), {})
+
+    def test_intersecting_keys(self):
+        d1 = {'A': ('A',), 'B': ('B', 3), 'C': ('C', 1)}
+        d2 = {'A': ('A', 1), 'B': ('B', 2), 'D': ('D', 3)}
+        self.assertEqual(min_dict(d1, d2), {'A': ('A',), 'B': ('B', 2)})
 
 
 class TestIsLossless(TestCase):

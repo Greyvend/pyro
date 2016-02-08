@@ -22,7 +22,7 @@ def min_dict(d1, d2):
     :param d2: second input dict
     """
     result = {}
-    intersected_keys = set(d1) and set(d2)
+    intersected_keys = set(d1) & set(d2)
     for key in intersected_keys:
         result[key] = min(d1[key], d2[key])
     return result

@@ -5,21 +5,23 @@ from pyro.lossless import is_lossless
 
 def closure(attributes, dependencies):
     """
-    count attribute closure according to given functional dependencies
-    :param attributes: attributes to count closure of
-    :param dependencies: deps of database, that form closure
+    Count attributes closure according to given functional dependencies. See
+    Ullman's "Database Systems - The Complete book", p. 75 for definition of
+    closure and this algorithm.
+
+    :param attributes: set of attributes to count closure of
+    :param dependencies: list of dependencies held on Database
     :return: set of attributes, contained in closure
     """
     result = set(attributes)
 
-    #Main job
     added = True
     while added:
         added = False
         for dep in dependencies:
-            if result.issuperset(dep.left()) and not result.issuperset(dep
-                .right()):
-                result = result.union(dep.right())
+            if (result.issuperset(dep['left']) and
+                    not result.issuperset(dep['right'])):
+                result = result.union(dep['right'])
                 added = True
     return result
 

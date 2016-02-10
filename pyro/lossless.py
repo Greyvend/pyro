@@ -1,12 +1,12 @@
 from functools import partial
 from itertools import groupby
 
-from pyro.utils import attributes
+from pyro import utils
 
 
 def _build_tableau(relations):
     tableau = []
-    all_attributes = attributes(relations)
+    all_attributes = utils.all_attributes(relations)
     for r in relations:
         tableau.append(
             {attr: attr if attr in r['attributes'] else attr + '_' + r['name']

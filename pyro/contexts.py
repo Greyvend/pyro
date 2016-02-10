@@ -1,6 +1,7 @@
 from itertools import combinations
 
 from pyro.lossless import is_lossless
+from pyro import utils
 
 
 def closure(attributes, dependencies):
@@ -26,42 +27,47 @@ def closure(attributes, dependencies):
     return result
 
 
-def contexts(db, relation_names):
-    def subsets_basic_pk(relation_name):
-        """
-        check, whether relation data subsets one of base relation by it's pk
-        :param relation_name: relation to be compared
-        :return: True if it does subset, False else
-        """
-        for base_name in relation_names:
-            if db.inclusion_dependency(relation_name, base_name, db.primary(
-                    base_name)): #check inn inclusion_dependency for
-                # attribute match
-                return True
-        return False
+def prioritized_relations(relations, base_relations, dependencies,
+                          all_attributes):
+    """
+    Compute relations priorities and sort `relations` by those priorities in
+    descending order. Priorities denote likelihood of the relation to satisfy
+    lossless join property when joined together with `base_relations`.
 
+    :param relations: list of relations to prioritize
+    :param base_relations: list of initial relations
+    :param dependencies: list of dependencies that are satisfied by all
+        relations
+    :param all_attributes: set of all DB attributes
+    :return: list of tuples of the following type: (r, N), where r is relations
+        element and N is a priority number from set {1, 2, 3}.
+    """
     result = []
-    other_relation_names = set(db.relation_names()).difference(relation_names)
-    all_attrs = db.all_attributes(relation_names)
-
-    #Set priorities
-    prioritized_relation_names = []
-    for name in enumerate(other_relation_names):
-        if closure(db.primary(name), db.dependencies()).issuperset(all_attrs):
-            prioritized_relation_names.append((name, 3))
-        elif subsets_basic_pk(name):
-            prioritized_relation_names.append((name, 2))
-        elif set(all_attrs).intersection(db.attributes(name)):
-            prioritized_relation_names.append((name, 1))
+    for relation in relations:
+        if closure(relation['pk'], dependencies).issuperset(all_attributes):
+            result.append((relation, 3))
+        elif set(utils.all_attributes(base_relations)).intersection(
+                relation['attributes']):
+            result.append((relation, 2))
         else:
-            prioritized_relation_names.append((name, 0))
-    prioritized_relation_names.sort(key=lambda elem: elem[1], reverse=True)
+            result.append((relation, 1))
+    return sorted(result, key=lambda elem: elem[1], reverse=True)
 
-    #Context pickup from relation combinations
-    n = len(prioritized_relation_names)
+
+def contexts(all_relations, base, dependencies):
+    base_relations = [r for r in all_relations if r['name'] in base]
+    relations_to_check = [r for r in all_relations if r['name'] not in base]
+
+    relations_to_check, priorities = zip(*prioritized_relations(
+        relations_to_check,
+        base_relations,
+        dependencies,
+        utils.all_attributes(all_relations)))
+
+    n = len(relations_to_check)
     for k in range(1, n + 1):
-        name_packs_to_add = combinations(prioritized_relation_names, k)
-        for names in name_packs_to_add:
-            context = relation_names + names
-            if is_lossless(db, context):
-                result.append(context)
+        relation_packs = combinations(relations_to_check, k)
+        for relations in relation_packs:
+            context = base + relations
+            if is_lossless(context, dependencies):
+                yield context

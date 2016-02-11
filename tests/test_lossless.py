@@ -98,6 +98,11 @@ class TestEqual(TestCase):
 
 
 class TestIsLossless(TestCase):
+    def test_single_relation(self):
+        r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
+        deps = []
+        self.assertTrue(is_lossless([r1], deps))
+
     def test_cartesian_product_no_deps(self):
         r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
         r2 = {'name': 'R2', 'attributes': {'C', 'D'}}

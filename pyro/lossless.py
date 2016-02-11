@@ -83,7 +83,7 @@ def is_lossless(relations, deps):
                     group_min = reduce(min_dict, values_to_change)
                     for row in group:
                         row.update(group_min)
-                    clear_rows = filter(is_clear, group)
-                    if clear_rows:
-                        return True
+        clear_rows = filter(is_clear, tableau)
+        if clear_rows:
+            return True
     return False

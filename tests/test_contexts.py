@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from pyro.contexts import closure, prioritized_relations
+from pyro.contexts import closure, prioritized_relations, contexts
 
 
 class TestClosure(TestCase):
@@ -123,3 +123,41 @@ class TestPrioritizedRelations(TestCase):
             dependencies=dependencies,
             all_attributes=all_attributes))
         self.assertEqual(priorities, (3, 2, 1))
+
+
+class TestContexts(TestCase):
+    def test_no_base_1_relation(self):
+        """
+        Check the simplest case with only one relation being checked for
+        context
+        """
+        r1 = {'name': 'R1', 'attributes': {'A', 'B'}, 'pk': {'A'}}
+        contexts_gen = contexts(all_relations=[r1], base=[], dependencies=[])
+        first_context = contexts_gen.next()
+        self.assertEqual(first_context, [r1])
+        self.assertRaises(StopIteration, contexts_gen.next)
+
+    def test_no_base_2_relations(self):
+        """
+        Check the simplest case with couple of relations being checked for
+        context
+        """
+        # case 1: lossless join property fails on relations
+        r1 = {'name': 'R1', 'attributes': {'A', 'B'}, 'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
+        contexts_gen = contexts(all_relations=[r1, r2], base=[],
+                                dependencies=[])
+        self.assertEqual(contexts_gen.next(), [r1])
+        self.assertEqual(contexts_gen.next(), [r2])
+        self.assertRaises(StopIteration, contexts_gen.next)
+
+        # case 2: lossless succeeds
+        r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}, 'pk': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
+        deps = [{'left': ('C',), 'right': ('D',)}]
+        contexts_gen = contexts(all_relations=[r1, r2], base=[],
+                                dependencies=deps)
+        self.assertEqual(contexts_gen.next(), [r1])
+        self.assertEqual(contexts_gen.next(), [r2])
+        self.assertEqual(contexts_gen.next(), [r1, r2])
+        self.assertRaises(StopIteration, contexts_gen.next)

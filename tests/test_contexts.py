@@ -161,3 +161,21 @@ class TestContexts(TestCase):
         self.assertEqual(contexts_gen.next(), [r2])
         self.assertEqual(contexts_gen.next(), [r1, r2])
         self.assertRaises(StopIteration, contexts_gen.next)
+
+    def test_with_base_relations(self):
+        """
+        Check the case with some base relations and additional relations
+        being checked for context
+        """
+        r1 = {'name': 'R1', 'attributes': {'A', 'D'}, 'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'A', 'C'}, 'pk': {'A'}}
+        r3 = {'name': 'R3', 'attributes': {'B', 'C', 'D'}, 'pk': {'B', 'C'}}
+        deps = [
+            {'left': ('A',), 'right': ('B',)},
+            {'left': ('B',), 'right': ('C',)},
+            {'left': ('C', 'D'), 'right': ('A',)},
+        ]
+        contexts_gen = contexts(all_relations=[r1, r2, r3], base=['R1'],
+                                dependencies=deps)
+        self.assertEqual(contexts_gen.next(), [r1, r2, r3])
+        self.assertRaises(StopIteration, contexts_gen.next)

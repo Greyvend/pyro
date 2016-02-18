@@ -72,6 +72,5 @@ def contexts(all_relations, base, dependencies):
             satisfied_deps = filter(lambda d: set(d['left'] + d['right'])
                                     .issubset(utils.all_attributes(relations)),
                                     dependencies)
-            print context
             if is_lossless(context, satisfied_deps):
                 yield context

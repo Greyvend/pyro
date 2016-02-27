@@ -27,8 +27,6 @@ if __name__ == '__main__':
 
         # fill dependencies from Primary keys and Unique constraints
         for table, table_data in metadata.tables.iteritems():
-            if table == 'address':
-                print 'I am here'
             pk = set(map(column_name, table_data.primary_key.columns))
             all_columns = set(map(column_name, table_data.columns))
             primary_key_dep = {

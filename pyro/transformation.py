@@ -74,3 +74,15 @@ def contexts(all_relations, base, dependencies):
                                     dependencies)
             if is_lossless(context, satisfied_deps):
                 yield context
+
+
+def build_warehouse(context, dependencies, database, warehouse):
+    """
+    Build Table of Joins data structure and writes it to the warehouse
+
+    :param context: list of relations representing context to use
+    :param dependencies: list of dependencies held
+    :param database: SQLAlchemy connection to the source database
+    :param warehouse: SQLAlchemy connection to the warehouse
+    """
+    pass

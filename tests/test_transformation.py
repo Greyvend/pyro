@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from pyro.contexts import closure, prioritized_relations, contexts
+from pyro.transformation import closure, prioritized_relations, contexts
 
 
 class TestClosure(TestCase):

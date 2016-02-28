@@ -4,12 +4,24 @@ from copy import deepcopy
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.engine.url import URL
 
+from pyro import transformation
+from pyro.transformation import build_warehouse
 
 config = {}
 
 
 def column_name(column):
     return column.name
+
+
+def relation_name(attribute):
+    """
+    Extract relation name from extended attribute
+
+    :param attribute: string in a form 'Relation_name.Attribute_name'
+    :return: string representing relation name ('Relation_name')
+    """
+    return attribute.split('.')[0]
 
 
 if __name__ == '__main__':
@@ -19,8 +31,8 @@ if __name__ == '__main__':
     relations = []
     dependencies = deepcopy(config.get('multi valued dependencies')) or []
 
-    engine = create_engine(URL(**config['database']))
-    metadata = MetaData(engine, reflect=True)
+    database_engine = create_engine(URL(**config['database']))
+    metadata = MetaData(database_engine, reflect=True)
 
     # fill relations list
     relations = metadata.tables.keys()
@@ -35,7 +47,7 @@ if __name__ == '__main__':
         }
         dependencies.append(primary_key_dep)
 
-        unique_indexes = filter(lambda i: i.unique, table_data.indexes)
+        unique_indexes = filter(lambda index: index.unique, table_data.indexes)
         for i in unique_indexes:
             key = set(map(column_name, i.columns))
             unique_dep = {
@@ -43,3 +55,28 @@ if __name__ == '__main__':
                 'right': all_columns - key
             }
             dependencies.append(unique_dep)
+
+    measure = config['measure']
+
+    # Start transformation
+    # build contexts
+    contexts = []
+    base_total = set(relation_name(measure))
+    # build dimension contexts
+    for dimension in config['dimensions']:
+        # extract relation names from extended attribute names in config
+        base = set(map(relation_name, dimension['attributes']))
+        base_total += base
+        # for now pick first found context
+        context = transformation.contexts(relations, base, dependencies).next()
+        contexts.append(context)
+
+    # finally build application context
+    app_context = transformation.contexts(relations, base_total,
+                                          dependencies).next()
+
+    # connect to the output DB, called "Warehouse"
+    warehouse_engine = create_engine(URL(**config['warehouse']))
+    for context in contexts:
+        build_warehouse(context=context, dependencies=dependencies,
+                        database=database_engine, warehouse=warehouse_engine)

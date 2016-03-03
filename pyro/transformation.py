@@ -69,7 +69,7 @@ def contexts(all_relations, base, dependencies):
         relation_packs = combinations(relations_to_check, k)
         for relations in relation_packs:
             context = base_relations + list(relations)
-            satisfied_deps = filter(lambda d: set(d['left'] + d['right'])
+            satisfied_deps = filter(lambda d: set(d['left'] | d['right'])
                                     .issubset(utils.all_attributes(relations)),
                                     dependencies)
             if is_lossless(context, satisfied_deps):

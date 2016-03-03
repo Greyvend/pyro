@@ -7,20 +7,20 @@ class TestClosure(TestCase):
     def test_simple(self):
         attributes = {'D'}
         dependencies = [
-            {'left': ('A', 'B'), 'right': ('C',)},
-            {'left': ('B', 'C'), 'right': ('A', 'D')},
-            {'left': ('D',), 'right': ('E',)},
-            {'left': ('C', 'F'), 'right': ('B',)},
+            {'left': {'A', 'B'}, 'right': {'C'}},
+            {'left': {'B', 'C'}, 'right': {'A', 'D'}},
+            {'left': {'D'}, 'right': {'E'}},
+            {'left': {'C', 'F'}, 'right': {'B'}},
         ]
         self.assertEqual(closure(attributes, dependencies), {'D', 'E'})
 
     def test_advanced(self):
         attributes = {'A', 'B'}
         dependencies = [
-            {'left': ('A', 'B'), 'right': ('C',)},
-            {'left': ('B', 'C'), 'right': ('A', 'D')},
-            {'left': ('D',), 'right': ('E',)},
-            {'left': ('C', 'F'), 'right': ('B',)},
+            {'left': {'A', 'B'}, 'right': {'C'}},
+            {'left': {'B', 'C'}, 'right': {'A', 'D'}},
+            {'left': {'D'}, 'right': {'E'}},
+            {'left': {'C', 'F'}, 'right': {'B'}},
         ]
         self.assertEqual(closure(attributes, dependencies),
                          {'A', 'B', 'C', 'D', 'E'})
@@ -79,9 +79,9 @@ class TestPrioritizedRelations(TestCase):
         r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
         r3 = {'name': 'R3', 'attributes': {'D', 'E'}, 'pk': {'D'}}
         dependencies = [
-            {'left': ('A', 'B'), 'right': ('C',)},
-            {'left': ('B', 'C'), 'right': ('A', 'D')},
-            {'left': ('D',), 'right': ('E',)}
+            {'left': {'A', 'B'}, 'right': {'C'}},
+            {'left': {'B', 'C'}, 'right': {'A', 'D'}},
+            {'left': {'D'}, 'right': {'E'}}
         ]
 
         # case 1: overwhelm in attributes
@@ -111,9 +111,9 @@ class TestPrioritizedRelations(TestCase):
         r3 = {'name': 'R3', 'attributes': {'D', 'E'}, 'pk': {'D'}}
         base = {'name': 'R4', 'attributes': {'C', 'A'}, 'pk': {'D'}}
         dependencies = [
-            {'left': ('A', 'B'), 'right': ('C',)},
-            {'left': ('B', 'C'), 'right': ('A', 'D')},
-            {'left': ('D',), 'right': ('E',)}
+            {'left': {'A', 'B'}, 'right': {'C'}},
+            {'left': {'B', 'C'}, 'right': {'A', 'D'}},
+            {'left': {'D'}, 'right': {'E'}}
         ]
         all_attributes = {'A', 'B', 'C', 'D', 'E'}
 
@@ -154,7 +154,7 @@ class TestContexts(TestCase):
         # case 2: lossless succeeds
         r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}, 'pk': {'A', 'B'}}
         r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
-        deps = [{'left': ('C',), 'right': ('D',)}]
+        deps = [{'left': {'C'}, 'right': {'D'}}]
         contexts_gen = contexts(all_relations=[r1, r2], base=[],
                                 dependencies=deps)
         self.assertEqual(contexts_gen.next(), [r1])
@@ -171,9 +171,9 @@ class TestContexts(TestCase):
         r2 = {'name': 'R2', 'attributes': {'A', 'C'}, 'pk': {'A'}}
         r3 = {'name': 'R3', 'attributes': {'B', 'C', 'D'}, 'pk': {'B', 'C'}}
         deps = [
-            {'left': ('A',), 'right': ('B',)},
-            {'left': ('B',), 'right': ('C',)},
-            {'left': ('C', 'D'), 'right': ('A',)},
+            {'left': {'A'}, 'right': {'B'}},
+            {'left': {'B'}, 'right': {'C'}},
+            {'left': {'C', 'D'}, 'right': {'A'}},
         ]
         contexts_gen = contexts(all_relations=[r1, r2, r3], base=['R1'],
                                 dependencies=deps)

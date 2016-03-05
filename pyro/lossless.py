@@ -9,7 +9,7 @@ def _build_tableau(relations):
     all_attributes = utils.all_attributes(relations)
     for r in relations:
         tableau.append(
-            {attr: attr if attr in r['attributes'] else attr + '_' + r['name']
+            {attr: (attr,) if attr in r['attributes'] else (attr, r['name'])
              for attr in all_attributes})
     return tableau
 

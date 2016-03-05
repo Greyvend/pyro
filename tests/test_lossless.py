@@ -16,7 +16,7 @@ class TestBuildTableau(TestCase):
         # attributes are present in both tables
         for row in tableau:
             for k, v in row.iteritems():
-                self.assertEqual(k, v)
+                self.assertEqual((k,), v)
 
     def test_all_different_attributes(self):
         """
@@ -26,14 +26,14 @@ class TestBuildTableau(TestCase):
         r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
         r2 = {'name': 'R2', 'attributes': {'C', 'D'}}
         tableau = _build_tableau([r1, r2])
-        self.assertEqual(tableau[0]['A'], 'A')
-        self.assertEqual(tableau[0]['B'], 'B')
-        self.assertEqual(tableau[0]['C'], 'C_R1')
-        self.assertEqual(tableau[0]['D'], 'D_R1')
-        self.assertEqual(tableau[1]['A'], 'A_R2')
-        self.assertEqual(tableau[1]['B'], 'B_R2')
-        self.assertEqual(tableau[1]['C'], 'C')
-        self.assertEqual(tableau[1]['D'], 'D')
+        self.assertEqual(tableau[0]['A'], ('A',))
+        self.assertEqual(tableau[0]['B'], ('B',))
+        self.assertEqual(tableau[0]['C'], ('C', 'R1'))
+        self.assertEqual(tableau[0]['D'], ('D', 'R1'))
+        self.assertEqual(tableau[1]['A'], ('A', 'R2'))
+        self.assertEqual(tableau[1]['B'], ('B', 'R2'))
+        self.assertEqual(tableau[1]['C'], ('C',))
+        self.assertEqual(tableau[1]['D'], ('D',))
 
     def test_intersecting_attributes(self):
         """
@@ -42,14 +42,14 @@ class TestBuildTableau(TestCase):
         r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}}
         r2 = {'name': 'R2', 'attributes': {'B', 'C', 'D'}}
         tableau = _build_tableau([r1, r2])
-        self.assertEqual(tableau[0]['A'], 'A')
-        self.assertEqual(tableau[0]['B'], 'B')
-        self.assertEqual(tableau[0]['C'], 'C')
-        self.assertEqual(tableau[0]['D'], 'D_R1')
-        self.assertEqual(tableau[1]['A'], 'A_R2')
-        self.assertEqual(tableau[1]['B'], 'B')
-        self.assertEqual(tableau[1]['C'], 'C')
-        self.assertEqual(tableau[1]['D'], 'D')
+        self.assertEqual(tableau[0]['A'], ('A',))
+        self.assertEqual(tableau[0]['B'], ('B',))
+        self.assertEqual(tableau[0]['C'], ('C',))
+        self.assertEqual(tableau[0]['D'], ('D', 'R1'))
+        self.assertEqual(tableau[1]['A'], ('A', 'R2'))
+        self.assertEqual(tableau[1]['B'], ('B',))
+        self.assertEqual(tableau[1]['C'], ('C',))
+        self.assertEqual(tableau[1]['D'], ('D',))
 
 
 class TestMinDict(TestCase):
@@ -98,9 +98,14 @@ class TestEqual(TestCase):
 
 
 class TestIsLossless(TestCase):
-    def test_single_relation(self):
+    def test_single_relation_no_deps(self):
         r1 = {'name': 'R1', 'attributes': {'A', 'B'}}
         deps = []
+        self.assertTrue(is_lossless([r1], deps))
+
+    def test_single_relation(self):
+        r1 = {'name': 'R1', 'attributes': {'pk', 'A_1', 'A_2'}}
+        deps = [{'left': {'pk'}, 'right': {'A_1', 'A_2'}}]
         self.assertTrue(is_lossless([r1], deps))
 
     def test_cartesian_product_no_deps(self):

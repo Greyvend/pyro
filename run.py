@@ -1,11 +1,11 @@
 import json
-from copy import deepcopy
 
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.engine.url import URL
 
 from pyro import transformation
 from pyro.transformation import build_warehouse
+
 
 config = {}
 
@@ -29,24 +29,34 @@ if __name__ == '__main__':
         config = json.load(config_file)
     # read RDB schema: all tables info: their attributes and dependencies
     relations = []
-    dependencies = deepcopy(config.get('multi valued dependencies')) or []
+
+    # get multi valued dependencies from the config
+    mvd = config.get('multi valued dependencies', [])
+    # transform lists of attributes to sets of attributes
+    mvd = [{part: set(attributes) for part, attributes in dep.iteritems()}
+           for dep in mvd]
+    dependencies = mvd
 
     database_engine = create_engine(URL(**config['database']))
     metadata = MetaData(database_engine, reflect=True)
-
-    # fill relations list
-    relations = metadata.tables.keys()
 
     # fill dependencies from Primary keys and Unique constraints
     for table, table_data in metadata.tables.iteritems():
         pk = set(map(column_name, table_data.primary_key.columns))
         all_columns = set(map(column_name, table_data.columns))
+
+        # fill relation
+        r = {'name': table, 'attributes': all_columns, 'pk': pk}
+        relations.append(r)
+
+        # fill PK dependency
         primary_key_dep = {
             'left': pk,
             'right': all_columns - pk
         }
         dependencies.append(primary_key_dep)
 
+        # fill Unique dependencies
         unique_indexes = filter(lambda index: index.unique, table_data.indexes)
         for i in unique_indexes:
             key = set(map(column_name, i.columns))
@@ -61,12 +71,12 @@ if __name__ == '__main__':
     # Start transformation
     # build contexts
     contexts = []
-    base_total = set(relation_name(measure))
+    base_total = {relation_name(measure)}
     # build dimension contexts
     for dimension in config['dimensions']:
         # extract relation names from extended attribute names in config
         base = set(map(relation_name, dimension['attributes']))
-        base_total += base
+        base_total |= base
         # for now pick first found context
         context = transformation.contexts(relations, base, dependencies).next()
         contexts.append(context)

@@ -55,6 +55,16 @@ def prioritized_relations(relations, base_relations, dependencies,
 
 
 def contexts(all_relations, base, dependencies):
+    """
+    Build Contexts - sets of relations that satisfy Lossless join property
+    based on the `base` relations provided.
+
+    :param all_relations: list of all relations to add to the context
+    :param base: list of strings - names of the relations that are initially in
+        the context
+    :param dependencies: list of dependencies held in the DB
+    :return yield list of relations representing context
+    """
     base_relations = [r for r in all_relations if r['name'] in base]
     relations_to_check = [r for r in all_relations if r['name'] not in base]
 
@@ -65,12 +75,12 @@ def contexts(all_relations, base, dependencies):
         utils.all_attributes(all_relations)))
 
     n = len(relations_to_check)
-    for k in range(1, n + 1):
+    for k in range(n + 1):
         relation_packs = combinations(relations_to_check, k)
         for relations in relation_packs:
             context = base_relations + list(relations)
             satisfied_deps = filter(lambda d: set(d['left'] | d['right'])
-                                    .issubset(utils.all_attributes(relations)),
+                                    .issubset(utils.all_attributes(context)),
                                     dependencies)
             if is_lossless(context, satisfied_deps):
                 yield context

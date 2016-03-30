@@ -86,13 +86,13 @@ def contexts(all_relations, base, dependencies):
                 yield context
 
 
-def build_warehouse(context, dependencies, database, warehouse):
+def build_table_of_joins(context, dependencies, source, destination):
     """
-    Build Table of Joins data structure and writes it to the warehouse
+    Build Table of Joins data structure and writes it to the destination DB
 
     :param context: list of relations representing context to use
     :param dependencies: list of dependencies held
-    :param database: SQLAlchemy connection to the source database
-    :param warehouse: SQLAlchemy connection to the warehouse
+    :param source: SQLAlchemy connection to the source database
+    :param destination: SQLAlchemy connection to the warehouse
     """
     pass

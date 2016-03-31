@@ -124,10 +124,7 @@ if __name__ == '__main__':
     # - dimension attributes
     # - key attributes of Measure attribute
     # - any common attributes of context relations
-    print "we are building TJ now"
     for context in contexts:
-        if context == app_context:
-            print 'stop na sek'
         context_attributes = all_attributes(context)
         # TODO: filter attributes to only pick needed ones
         tj_attributes = {key: attributes[key] for key in context_attributes}

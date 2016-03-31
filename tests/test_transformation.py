@@ -177,5 +177,6 @@ class TestContexts(TestCase):
         ]
         contexts_gen = contexts(all_relations=[r1, r2, r3], base=['R1'],
                                 dependencies=deps)
+        self.assertEqual(contexts_gen.next(), [r1])
         self.assertEqual(contexts_gen.next(), [r1, r2, r3])
         self.assertRaises(StopIteration, contexts_gen.next)

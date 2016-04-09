@@ -1,4 +1,4 @@
-from itertools import combinations
+import itertools
 
 from pyro.lossless import is_lossless
 from pyro import utils
@@ -54,6 +54,19 @@ def prioritized_relations(relations, base_relations, dependencies,
     return sorted(result, key=lambda elem: elem[1], reverse=True)
 
 
+def lossless_combinations(relations, dependencies):
+    n = len(relations)
+    for k in range(n + 1):
+        combinations = itertools.combinations(relations, k)
+        for combination in combinations:
+            def is_dependency_held(dep):
+                attributes = set(dep['left'] | dep['right'])
+                return attributes.issubset(utils.all_attributes(combination))
+            satisfied_deps = filter(is_dependency_held, dependencies)
+            if is_lossless(combination, satisfied_deps):
+                yield list(combination)
+
+
 def contexts(all_relations, base, dependencies):
     """
     Build Contexts - sets of relations that satisfy Lossless join property
@@ -76,7 +89,7 @@ def contexts(all_relations, base, dependencies):
 
     n = len(relations_to_check)
     for k in range(n + 1):
-        relation_packs = combinations(relations_to_check, k)
+        relation_packs = itertools.combinations(relations_to_check, k)
         for relations in relation_packs:
             context = base_relations + list(relations)
             satisfied_deps = filter(lambda d: set(d['left'] | d['right'])
@@ -84,15 +97,3 @@ def contexts(all_relations, base, dependencies):
                                     dependencies)
             if is_lossless(context, satisfied_deps):
                 yield context
-
-
-def build_table_of_joins(context, dependencies, source, destination):
-    """
-    Build Table of Joins data structure and writes it to the destination DB
-
-    :param context: list of relations representing context to use
-    :param dependencies: list of dependencies held
-    :param source: SQLAlchemy connection to the source database
-    :param destination: SQLAlchemy connection to the warehouse
-    """
-    pass

@@ -1,34 +1,12 @@
 import json
-from copy import deepcopy
 
-from sqlalchemy import create_engine, MetaData, Table, Column
-from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
-    LargeBinary
+from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 
-# noinspection PyUnresolvedReferences
-from pyro import transformation, compilers
-from pyro.utils import all_attributes
+from pyro import db, tj, transformation
 
 
 config = {}
-
-
-def column_name(column):
-    return column.name
-
-
-def transform_column_type(column_type):
-    if isinstance(column_type, Integer):
-        return Integer
-    elif isinstance(column_type, (String, DateTime)):
-        return Text
-    elif isinstance(column_type, _Binary):
-        return LargeBinary
-    new_type = deepcopy(column_type)
-    new_type.collation = None
-    new_type.encoding = 'utf-8'
-    return new_type
 
 
 def relation_name(attribute):
@@ -45,48 +23,17 @@ if __name__ == '__main__':
     with open('config.json') as config_file:
         config = json.load(config_file)
 
-    relations = []  # all tables info: their attribute names and dependencies
-    attributes = dict()  # store attributes name -> data type mapping
+    # connect to source Database
+    source_engine = create_engine(URL(**config['source_db']))
+
+    relations, dependencies = db.get_schema(source_engine)
 
     # get multi valued dependencies from the config
     mvd = config.get('multi valued dependencies', [])
     # transform lists of attributes to sets of attributes
     mvd = [{part: set(attributes) for part, attributes in dep.iteritems()}
            for dep in mvd]
-    dependencies = mvd
-
-    source_engine = create_engine(URL(**config['source_db']))
-    metadata = MetaData(source_engine, reflect=True)
-
-    # fill dependencies from Primary keys and Unique constraints
-    for table, table_data in metadata.tables.iteritems():
-        # unite existing attributes data with this table's attributes
-        attributes.update({column.name: transform_column_type(column.type)
-                           for column in table_data.columns})
-
-        pk = set(map(column_name, table_data.primary_key.columns))
-        all_columns = set(map(column_name, table_data.columns))
-
-        # fill relation
-        r = {'name': table, 'attributes': all_columns, 'pk': pk}
-        relations.append(r)
-
-        # fill PK dependency
-        primary_key_dep = {
-            'left': pk,
-            'right': all_columns - pk
-        }
-        dependencies.append(primary_key_dep)
-
-        # fill Unique dependencies
-        unique_indexes = filter(lambda index: index.unique, table_data.indexes)
-        for i in unique_indexes:
-            key = set(map(column_name, i.columns))
-            unique_dep = {
-                'left': key,
-                'right': all_columns - key
-            }
-            dependencies.append(unique_dep)
+    dependencies.extend(mvd)
 
     measure = config['measure']
 
@@ -116,26 +63,6 @@ if __name__ == '__main__':
 
     # connect to the output DB
     cube_engine = create_engine(URL(**config['cube_db']))
-    metadata = MetaData()
-
-    # create TJ schemas.
-    # Every TJ consists from the relations of the context
-    # Attributes that go to the TJ:
-    # - dimension attributes
-    # - key attributes of Measure attribute
-    # - any common attributes of context relations
-    for context in contexts:
-        context_attributes = all_attributes(context)
-        # TODO: filter attributes to only pick needed ones
-        tj_attributes = {key: attributes[key] for key in context_attributes}
-        columns = [Column(name, type) for name, type in
-                   tj_attributes.iteritems()]
-        tj = Table('TJ_' + '_'.join(r['name'] for r in context), metadata,
-                   *columns)
-    metadata.create_all(cube_engine)
 
     for context in contexts:
-        transformation.build_table_of_joins(context=context,
-                                            dependencies=dependencies,
-                                            source=source_engine,
-                                            destination=cube_engine)
+        tj.build(context, dependencies, source_engine, cube_engine)

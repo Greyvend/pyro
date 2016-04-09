@@ -2,7 +2,6 @@ from unittest import TestCase
 
 from pyro.transformation import closure, prioritized_relations, contexts
 
-
 class TestClosure(TestCase):
     def test_simple(self):
         attributes = {'D'}

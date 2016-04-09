@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from sqlalchemy import MetaData
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
 
@@ -17,7 +18,7 @@ def transform_column_type(column_type):
     return new_type
 
 
-def get_schema(metadata):
+def get_schema(engine):
     """
     Obtain DB schema and transform it into Python types.
 
@@ -27,10 +28,12 @@ def get_schema(metadata):
     'column' - source representation of single table column. After
     transformation it becomes an 'attribute'.
 
-    :param metadata: SQLAlchemy object with Database schema information
+    :param engine: SQLAlchemy object with Database schema information
     :rtype: tuple
     :return list of relations, list of dependencies
     """
+    metadata = MetaData(engine, reflect=True)
+
     relations = []
     dependencies = []
     # fill dependencies from Primary keys and Unique constraints

@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from pyro.transformation import closure, prioritized_relations, contexts
 
+
 class TestClosure(TestCase):
     def test_simple(self):
         attributes = {'D'}
@@ -30,10 +31,14 @@ class TestPrioritizedRelations(TestCase):
         """
         Check the case when no base relations and dependencies are provided
         """
-        r1 = {'name': 'R1', 'attributes': {'A', 'B'}, 'pk': {'A'}}
-        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
-        r3 = {'name': 'R3', 'attributes': {'E', 'F'}, 'pk': {'E'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
+              'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
+              'pk': {'C'}}
+        r3 = {'name': 'R3', 'attributes': {'E': 'INT', 'F': 'INT'},
+              'pk': {'E'}}
 
+        # case 1: no base relations
         relations_to_check, priorities = zip(*prioritized_relations(
             relations=[r1, r2, r3],
             base_relations=[],
@@ -41,15 +46,7 @@ class TestPrioritizedRelations(TestCase):
             all_attributes={'A', 'B', 'C', 'D', 'E', 'F'}))
         self.assertEqual(priorities, (1,) * 3)
 
-    def test_all_low_priority_with_base_relations(self):
-        """
-        Check the case when some base relations are provided but priorities are
-        still lowest for all relations
-        """
-        r1 = {'name': 'R1', 'attributes': {'A', 'B'}, 'pk': {'A'}}
-        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
-        r3 = {'name': 'R3', 'attributes': {'E', 'F'}, 'pk': {'E'}}
-
+        # case 2: one base relation
         relations_to_check, priorities = zip(*prioritized_relations(
             relations=[r2, r3],
             base_relations=[r1],
@@ -62,9 +59,12 @@ class TestPrioritizedRelations(TestCase):
         Check the case when some base relations are provided and it makes
         priorities to raise
         """
-        r1 = {'name': 'R1', 'attributes': {'A', 'B', 'E'}, 'pk': {'A'}}
-        r2 = {'name': 'R2', 'attributes': {'B', 'C'}, 'pk': {'C'}}
-        r3 = {'name': 'R3', 'attributes': {'E', 'F'}, 'pk': {'E'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT', 'E': 'INT'},
+              'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'B': 'INT', 'C': 'INT'},
+              'pk': {'C'}}
+        r3 = {'name': 'R3', 'attributes': {'E': 'INT', 'F': 'INT'},
+              'pk': {'E'}}
 
         relations_to_check, priorities = zip(*prioritized_relations(
             relations=[r2, r3],
@@ -83,7 +83,7 @@ class TestPrioritizedRelations(TestCase):
             {'left': {'D'}, 'right': {'E'}}
         ]
 
-        # case 1: overwhelm in attributes
+        # case 1: excessive attributes
         all_attributes = {'A', 'B', 'C', 'D', 'E', 'F'}
         relations_to_check, priorities = zip(*prioritized_relations(
             relations=[r1, r2, r3],
@@ -105,10 +105,14 @@ class TestPrioritizedRelations(TestCase):
         """
         Check the case when all types of priorities are assigned
         """
-        r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}, 'pk': {'A', 'B'}}
-        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
-        r3 = {'name': 'R3', 'attributes': {'D', 'E'}, 'pk': {'D'}}
-        base = {'name': 'R4', 'attributes': {'C', 'A'}, 'pk': {'D'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT', 'C': 'INT'},
+              'pk': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
+              'pk': {'C'}}
+        r3 = {'name': 'R3', 'attributes': {'D': 'INT', 'E': 'INT'},
+              'pk': {'D'}}
+        base = {'name': 'R4', 'attributes': {'C': 'INT', 'A': 'INT'},
+                'pk': {'D'}}
         dependencies = [
             {'left': {'A', 'B'}, 'right': {'C'}},
             {'left': {'B', 'C'}, 'right': {'A', 'D'}},
@@ -130,7 +134,8 @@ class TestContexts(TestCase):
         Check the simplest case with only one relation being checked for
         context
         """
-        r1 = {'name': 'R1', 'attributes': {'A', 'B'}, 'pk': {'A'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
+              'pk': {'A'}}
         contexts_gen = contexts(all_relations=[r1], base=[], dependencies=[])
         first_context = contexts_gen.next()
         self.assertEqual(first_context, [r1])
@@ -142,8 +147,10 @@ class TestContexts(TestCase):
         context
         """
         # case 1: lossless join property fails on relations
-        r1 = {'name': 'R1', 'attributes': {'A', 'B'}, 'pk': {'A'}}
-        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
+              'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
+              'pk': {'C'}}
         contexts_gen = contexts(all_relations=[r1, r2], base=[],
                                 dependencies=[])
         self.assertEqual(contexts_gen.next(), [r1])
@@ -151,8 +158,10 @@ class TestContexts(TestCase):
         self.assertRaises(StopIteration, contexts_gen.next)
 
         # case 2: lossless succeeds
-        r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}, 'pk': {'A', 'B'}}
-        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT', 'C': 'INT'},
+              'pk': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
+              'pk': {'C'}}
         deps = [{'left': {'C'}, 'right': {'D'}}]
         contexts_gen = contexts(all_relations=[r1, r2], base=[],
                                 dependencies=deps)
@@ -166,9 +175,12 @@ class TestContexts(TestCase):
         Check the case with some base relations and additional relations
         being checked for context
         """
-        r1 = {'name': 'R1', 'attributes': {'A', 'D'}, 'pk': {'A'}}
-        r2 = {'name': 'R2', 'attributes': {'A', 'C'}, 'pk': {'A'}}
-        r3 = {'name': 'R3', 'attributes': {'B', 'C', 'D'}, 'pk': {'B', 'C'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'D': 'INT'},
+              'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'A': 'INT', 'C': 'INT'},
+              'pk': {'A'}}
+        r3 = {'name': 'R3', 'attributes': {'B': 'INT', 'C': 'INT', 'D': 'INT'},
+              'pk': {'B', 'C'}}
         deps = [
             {'left': {'A'}, 'right': {'B'}},
             {'left': {'B'}, 'right': {'C'}},

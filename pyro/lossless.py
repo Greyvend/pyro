@@ -2,6 +2,7 @@ from functools import partial
 from itertools import groupby
 
 from pyro import utils
+from pyro.utils import min_dict, all_equal
 
 
 def _build_tableau(relations):
@@ -12,35 +13,6 @@ def _build_tableau(relations):
             {attr: (attr,) if attr in r['attributes'] else (attr, r['name'])
              for attr in all_attributes})
     return tableau
-
-
-def min_dict(d1, d2):
-    """
-    Based on two input dictionaries build third one with all the values set to
-    minimum of `d1`, `d2` across the common keys
-
-    :param d1: first input dict
-    :param d2: second input dict
-    """
-    result = {}
-    intersected_keys = set(d1) & set(d2)
-    for key in intersected_keys:
-        result[key] = min(d1[key], d2[key])
-    return result
-
-
-def all_equal(iterable):
-    """
-    Check that all values of iterable are equal
-
-    :param iterable: any iterable
-    :return: True if all values are equal, False otherwise
-    """
-    first = iterable[0]
-    for item in iterable[1:]:
-        if cmp(first, item) != 0:
-            return False
-    return True
 
 
 def is_clear(row):

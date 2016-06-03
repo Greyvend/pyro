@@ -4,19 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 
 from pyro import db, tj, transformation
+from pyro.utils import relation_name
 
 
 config = {}
-
-
-def relation_name(attribute):
-    """
-    Extract relation name from extended attribute
-
-    :param attribute: string in a form 'Relation_name.Attribute_name'
-    :return: string representing relation name ('Relation_name')
-    """
-    return attribute.split('.')[0]
 
 
 if __name__ == '__main__':
@@ -35,6 +26,7 @@ if __name__ == '__main__':
            for dep in mvd]
     dependencies.extend(mvd)
 
+    # get measure
     measure = config['measure']
 
     # Start transformation
@@ -50,15 +42,13 @@ if __name__ == '__main__':
         context = transformation.contexts(relations, base, dependencies).next()
         contexts.append(context)
 
-    # finally build application context
+    # build application context
     try:
         app_context = transformation.contexts(relations, base_total,
                                               dependencies).next()
     except StopIteration:
         # no combination satisfies Lossless Join property. Pick all relations
         app_context = relations
-
-    # we treat application context as just another context.
     contexts.append(app_context)
 
     # connect to the output DB

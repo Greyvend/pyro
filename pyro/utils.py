@@ -49,3 +49,13 @@ def all_equal(iterable):
         if cmp(first, item) != 0:
             return False
     return True
+
+
+def relation_name(attribute):
+    """
+    Extract relation name from extended attribute name
+
+    :param attribute: string in a form 'Relation_name.Attribute_name'
+    :return: string representing relation name ('Relation_name')
+    """
+    return attribute.split('.')[0]

@@ -7,6 +7,16 @@ from sqlalchemy.exc import OperationalError
 
 
 def transform_column_type(column_type):
+    """
+    Make necessary transformation of `column_type` to one of the base
+    SQLAlchemy types or the one with `collation` and `encoding` attributes set
+    to default values.
+
+    This transformation is needed due to potential differences in DBMSes in
+    use.
+    :param column_type: object representing DB column data type
+    :return: one of the `sqlalchemy.types` classes
+    """
     if isinstance(column_type, Integer):
         return Integer
     elif isinstance(column_type, (String, DateTime)):
@@ -62,6 +72,13 @@ def get_schema(engine):
 
 
 def create_table(name, attributes, engine):
+    """
+    Execute CREATE TABLE on desired DB with specified name/attributes.
+
+    :param name: table name
+    :param attributes: dict of (name, type) pairs representing table columns
+    :param engine: SQLAlchemy engine to be used
+    """
     cube_metadata = MetaData(engine)
     columns = {Column(name, type) for name, type in attributes.iteritems()}
     try:

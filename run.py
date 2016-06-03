@@ -7,9 +7,6 @@ from pyro import db, tj, transformation
 from pyro.utils import relation_name
 
 
-config = {}
-
-
 if __name__ == '__main__':
     with open('config.json') as config_file:
         config = json.load(config_file)

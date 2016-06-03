@@ -1,8 +1,9 @@
 from copy import deepcopy
 
-from sqlalchemy import MetaData
+from sqlalchemy import Column, Table, MetaData
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
+from sqlalchemy.exc import OperationalError
 
 
 def transform_column_type(column_type):
@@ -58,3 +59,13 @@ def get_schema(engine):
         r = {'name': table, 'attributes': attributes, 'pk': pk}
         relations.append(r)
     return relations, dependencies
+
+
+def create_table(name, attributes, engine):
+    cube_metadata = MetaData(engine)
+    columns = {Column(name, type) for name, type in attributes.iteritems()}
+    try:
+        Table(name, cube_metadata, *columns).create(engine)
+    except OperationalError as e:
+        if 'already exists' not in e.args[0]:
+            raise

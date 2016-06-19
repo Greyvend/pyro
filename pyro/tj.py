@@ -1,10 +1,5 @@
-from copy import deepcopy
-
-from sqlalchemy import MetaData, select
-
-from pyro.transformation import lossless_combinations
-from pyro.utils import containing_relation
 from pyro import db
+from pyro.transformation import lossless_combinations
 
 
 def get_attributes(context, dependencies):
@@ -29,27 +24,6 @@ def get_attributes(context, dependencies):
     return attributes
 
 
-def get_columns_to_select(relations, all_columns):
-    """
-    Retrieve all those columns from `all_columns` that actually exist in
-    `relations` list of relations. Set table name for those columns so they are
-    ready for selection query.
-
-    :param relations: list of relations to consider
-    :param all_columns: list of columns to filter
-    :return: list of resulting columns
-    """
-    columns = deepcopy(all_columns)
-    for column in columns:
-        try:
-            relation = containing_relation(relations, column.name)
-        except ValueError:
-            columns.remove(column)
-        else:
-            column.table = relation['name']
-    return columns
-
-
 def filter_subordinate_rows(data):
     return data  # TODO: Algorithm 2 from the big paper
 
@@ -71,18 +45,7 @@ def build(context, dependencies, source, cube):
     # fill TJ with data
     tj_data = []
     relations_gen = lossless_combinations(context, dependencies)
-    conn = source.connect()
-    source_metadata = MetaData(source, reflect=True)
     for relations in relations_gen:
         # Execute JOIN of required source db tables
-        # TODO: move this block to db.py
-        join = None
-        for r in relations:
-            if join is None:
-                join = source_metadata.tables[r['name']]
-            else:
-                join = join.join(source_metadata.tables[r['name']])
-        select_columns = get_columns_to_select(relations, attributes)
-        s = select(select_columns).select_from(join)
-        result = conn.execute(s)
+        join_data = db.join(relations, attributes)
         tj_data = filter_subordinate_rows(tj_data.extend(result))

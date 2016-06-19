@@ -1,9 +1,11 @@
 from copy import deepcopy
 
-from sqlalchemy import Column, Table, MetaData
+from sqlalchemy import Column, Table, MetaData, select
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
 from sqlalchemy.exc import OperationalError
+
+from pyro.utils import containing_relation
 
 
 def transform_column_type(column_type):
@@ -86,3 +88,40 @@ def create_table(name, attributes, engine):
     except OperationalError as e:
         if 'already exists' not in e.args[0]:
             raise
+
+
+def get_columns_to_select(relations, all_columns):
+    """
+    Retrieve all those columns from `all_columns` that actually exist in
+    `relations` list of relations. Set table name for those columns so they are
+    ready for selection query.
+
+    :param relations: list of relations to consider
+    :param all_columns: list of columns to filter
+    :return: list of resulting columns
+    """
+    columns = deepcopy(all_columns)
+    for column in columns:
+        try:
+            relation = containing_relation(relations, column.name)
+        except ValueError:
+            columns.remove(column)
+        else:
+            column.table = relation['name']
+    return columns
+
+
+def join(engine, relations, attributes):
+    metadata = MetaData(engine, reflect=True)
+    join_expr = None
+    for r in relations:
+        table = metadata.tables[r['name']]
+        if join_expr is None:
+            join_expr = table
+        else:
+            join_expr = join_expr.join(table)
+    select_columns = get_columns_to_select(relations, attributes)
+    s = select(select_columns).select_from(join_expr)
+    conn = engine.connect()
+    result = conn.execute(s)
+    return result

@@ -52,7 +52,7 @@ class TestTransformColumnType(DatabaseTestCase):
 
 
 class TestJoin(DatabaseTestCase):
-    def test_simple_one_common_attribute(self):
+    def test_2_relations_1_common_attribute(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
                       Column('id', Integer, primary_key=True),
@@ -88,3 +88,43 @@ class TestJoin(DatabaseTestCase):
         self.assertEqual(len(join_result), 4)
         self.assertIn(('Jack Jones', 'jack@yahoo.com'), join_result)
         self.assertNotIn(('Jack Jones', 'wendy@aol.com'), join_result)
+
+    def test_2_relations_2_common_attribute(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('id', Integer, primary_key=True),
+                      Column('name', String(20)),
+                      Column('fullname', String(50)))
+        addresses = Table('addresses', metadata,
+                          Column('id', Integer, primary_key=True),
+                          Column('name', String(20)),
+                          Column('user_id', None, ForeignKey('users.id')))
+        metadata.create_all()
+
+        # populate with data
+        conn = self.engine.connect()
+        conn.execute(users.insert(), [
+            {'name': 'jack', 'fullname': 'Jack Jones'},
+            {'name': 'wendy', 'fullname': 'Wendy Williams'}
+        ])
+        conn.execute(addresses.insert(), [
+            {'user_id': 1, 'name': 'Local Address'},
+            {'user_id': 1, 'name': 'Local Address 2'},
+            {'user_id': 2, 'name': 'Local Address 3'},
+            {'user_id': 2, 'name': 'Local Address 4'},
+        ])
+
+        sql_join = db.join(self.engine, [
+            {'name': 'users', 'attributes': {'id': Integer, 'name': String,
+                                             'fullname': String}},
+            {'name': 'addresses', 'attributes': {'id': Integer,
+                                                 'user_id': Integer,
+                                                 'name': String}},
+        ], [{'fullname': String}, {'name': String}])
+        join_result = sql_join.fetchall()
+        self.assertEqual(len(join_result), 4)
+        # !Because we don't specify extended attribute names here the 'name'
+        # attribute used in JOIN will be the one from 'users' table (first
+        # occurred).
+        self.assertIn(('Jack Jones', 'jack'), join_result)
+        self.assertNotIn(('Jack Jones', 'wendy'), join_result)

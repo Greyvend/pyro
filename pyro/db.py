@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from sqlalchemy import Column, Table, MetaData, select
+from sqlalchemy import Column, Table, MetaData, select, column
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
 from sqlalchemy.exc import OperationalError
@@ -90,37 +90,34 @@ def create_table(name, attributes, engine):
             raise
 
 
-def get_columns_to_select(relations, all_columns):
+def get_columns_to_select(metadata, relations, attributes):
     """
-    Retrieve all those columns from `all_columns` that actually exist in
+    Retrieve all those columns from `attributes` that actually exist in
     `relations` list of relations. Set table name for those columns so they are
     ready for selection query.
 
+    :param metadata: SQLAlchemy metadata bound to the DB engine
     :param relations: list of relations to consider
-    :param all_columns: list of columns to filter
+    :param attributes: list of attributes to filter
     :return: list of resulting columns
+    :rtype: sqlalchemy.Column
     """
-    columns = deepcopy(all_columns)
-    for column in columns:
+    columns = map(lambda a: column(a.keys()[0]), attributes)
+    for col in columns:
         try:
-            relation = containing_relation(relations, column.name)
+            relation = containing_relation(relations, col.name)
         except ValueError:
-            columns.remove(column)
+            columns.remove(col)
         else:
-            column.table = relation['name']
+            col.table = metadata.tables[relation['name']]
     return columns
 
 
 def join(engine, relations, attributes):
     metadata = MetaData(engine, reflect=True)
-    join_expr = None
-    for r in relations:
-        table = metadata.tables[r['name']]
-        if join_expr is None:
-            join_expr = table
-        else:
-            join_expr = join_expr.join(table)
-    select_columns = get_columns_to_select(relations, attributes)
+    tables = map(lambda r: metadata.tables[r['name']], relations)
+    join_expr = reduce(lambda j, t: j.join(t), tables)
+    select_columns = get_columns_to_select(metadata, relations, attributes)
     s = select(select_columns).select_from(join_expr)
     conn = engine.connect()
     result = conn.execute(s)

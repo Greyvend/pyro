@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from pyro.transformation import closure, prioritized_relations, contexts
+from pyro.transformation import closure, prioritized_relations, contexts, \
+    existing_join
 
 
 class TestClosure(TestCase):
@@ -24,6 +25,44 @@ class TestClosure(TestCase):
         ]
         self.assertEqual(closure(attributes, dependencies),
                          {'A', 'B', 'C', 'D', 'E'})
+
+
+class TestExistingJoin(TestCase):
+    def test_no_intersections(self):
+        """
+        Check the case when no relations intersect
+        """
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'}}
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'}}
+        r3 = {'name': 'R3', 'attributes': {'E': 'INT', 'F': 'INT'}}
+
+        result = existing_join([r1, r2, r3])
+        self.assertEqual(result, [r1])
+
+    def test_one_separate(self):
+        """
+        Check the case when all but one relations intersect
+        """
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'}}
+        r2 = {'name': 'R2', 'attributes': {'B': 'INT', 'C': 'INT'}}
+        r3 = {'name': 'R3', 'attributes': {'B': 'INT', 'D': 'INT'}}
+        r4 = {'name': 'R4', 'attributes': {'F': 'INT', 'G': 'INT'}}
+
+        result = existing_join([r1, r2, r3, r4])
+        self.assertEqual(result, [r1, r2, r3])
+
+    def test_all_intersecting(self):
+        """
+        Check the case when all but one relations intersect
+        """
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'}}
+        r2 = {'name': 'R2', 'attributes': {'G': 'INT', 'C': 'INT'}}
+        r3 = {'name': 'R3', 'attributes': {'B': 'INT', 'D': 'INT'}}
+        r4 = {'name': 'R4', 'attributes': {'F': 'INT', 'G': 'INT'}}
+        r5 = {'name': 'R3', 'attributes': {'A': 'INT', 'C': 'INT'}}
+
+        result = existing_join([r1, r2, r3, r4, r5])
+        self.assertEqual(result, [r1, r3, r5, r2, r4])
 
 
 class TestPrioritizedRelations(TestCase):

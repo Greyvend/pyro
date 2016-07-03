@@ -1,7 +1,9 @@
 import itertools
+from copy import deepcopy
 
 from pyro.lossless import is_lossless
 from pyro import utils
+from pyro.utils import common_keys
 
 
 def closure(attributes, dependencies):
@@ -25,6 +27,29 @@ def closure(attributes, dependencies):
                 result = result.union(dep['right'])
                 added = True
     return result
+
+
+def existing_join(_relations):
+    """
+    Implementation of the Existing Join algorithm, building the proper sequence
+    of relations that can be used for the Natural Join query
+    :param _relations: list of relations
+    :return: permuted list of relations where each relation intersects with
+    at least one of the previous relations
+    """
+    relations = deepcopy(_relations)
+    rel_len = len(relations)
+    point = 1
+    for i in range(rel_len - 1):
+        for j in range(point, rel_len):
+            if common_keys(relations[i]['attributes'],
+                           relations[j]['attributes']):
+                relations[point], relations[j] = relations[j], relations[point]
+                point += 1
+        if point == rel_len:
+            return relations
+        if point == i + 1:
+            return relations[:point]
 
 
 def prioritized_relations(relations, base_relations, dependencies,

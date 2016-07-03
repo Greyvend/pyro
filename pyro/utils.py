@@ -25,9 +25,9 @@ def containing_relation(relations, attribute):
 def project(d, keys):
     """
     Return subdict of given dictionary containing only specified keys.
-    :param d:
-    :param keys:
-    :return:
+    :param d: dictionary
+    :param keys: iterable with key names
+    :return: dictionary with specified keys and values from initial dictionary
     """
     return {k: d[k] for k in keys}
 
@@ -35,9 +35,9 @@ def project(d, keys):
 def common_keys(d1, d2):
     """
     Return set of keys shared between two dictionaries
-    :param d1:
-    :param d2:
-    :return:
+    :param d1: dictionary
+    :param d2: dictionary
+    :return: set of common key names
     """
     return set(d1) & set(d2)
 

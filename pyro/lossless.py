@@ -2,7 +2,7 @@ from functools import partial
 from itertools import groupby
 
 from pyro import utils
-from pyro.utils import min_dict, all_equal
+from pyro.utils import min_dict, all_equal, project
 
 
 def _build_tableau(relations):
@@ -43,7 +43,6 @@ def is_lossless(relations, deps):
     while changed:
         changed = False
         for dep in deps:
-            def project(d, keys): return {k: d[k] for k in keys}
             dep_left = partial(project, keys=dep['left'])
             dep_right = partial(project, keys=dep['right'])
             tableau = sorted(tableau, key=dep_left)

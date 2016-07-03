@@ -22,6 +22,26 @@ def containing_relation(relations, attribute):
     raise ValueError('Attribute was not found in the relations specified')
 
 
+def project(d, keys):
+    """
+    Return subdict of given dictionary containing only specified keys.
+    :param d:
+    :param keys:
+    :return:
+    """
+    return {k: d[k] for k in keys}
+
+
+def common_keys(d1, d2):
+    """
+    Return set of keys shared between two dictionaries
+    :param d1:
+    :param d2:
+    :return:
+    """
+    return set(d1) & set(d2)
+
+
 def min_dict(d1, d2):
     """
     Based on two input dictionaries build third one with all the values set to
@@ -31,8 +51,7 @@ def min_dict(d1, d2):
     :param d2: second input dict
     """
     result = {}
-    intersected_keys = set(d1) & set(d2)
-    for key in intersected_keys:
+    for key in common_keys(d1, d2):
         result[key] = min(d1[key], d2[key])
     return result
 

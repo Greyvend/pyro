@@ -47,5 +47,5 @@ def build(context, dependencies, source, cube):
     relations_gen = lossless_combinations(context, dependencies)
     for relations in relations_gen:
         # Execute JOIN of required source db tables
-        join_data = db.join(relations, attributes)
+        join_data = db.natural_join(relations, attributes)
         tj_data = filter_subordinate_rows(tj_data.extend(result))

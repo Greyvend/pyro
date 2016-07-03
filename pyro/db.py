@@ -113,7 +113,7 @@ def get_columns_to_select(metadata, relations, attributes):
     return columns
 
 
-def join(engine, relations, attributes):
+def natural_join(engine, relations, attributes):
     metadata = MetaData(engine, reflect=True)
     tables = map(lambda r: metadata.tables[r['name']], relations)
     join_expr = reduce(lambda j, t: j.join(t), tables)

@@ -1,5 +1,5 @@
 from sqlalchemy import MetaData, Integer, String, Column, Table, ForeignKey
-from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary
+from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
 from sqlalchemy.dialects.mysql import REAL
 
 from pyro import db
@@ -77,7 +77,7 @@ class TestJoin(DatabaseTestCase):
             {'user_id': 2, 'email_address': 'wendy@aol.com'},
         ])
 
-        sql_join = db.join(self.engine, [
+        sql_join = db.natural_join(self.engine, [
             {'name': 'users', 'attributes': {'id': Integer, 'name': String,
                                              'fullname': String}},
             {'name': 'addresses', 'attributes': {'id': Integer,
@@ -114,7 +114,7 @@ class TestJoin(DatabaseTestCase):
             {'user_id': 2, 'name': 'Local Address 4'},
         ])
 
-        sql_join = db.join(self.engine, [
+        sql_join = db.natural_join(self.engine, [
             {'name': 'users', 'attributes': {'id': Integer, 'name': String,
                                              'fullname': String}},
             {'name': 'addresses', 'attributes': {'id': Integer,
@@ -128,3 +128,51 @@ class TestJoin(DatabaseTestCase):
         # occurred).
         self.assertIn(('Jack Jones', 'jack'), join_result)
         self.assertNotIn(('Jack Jones', 'wendy'), join_result)
+
+    def test_2_relations_no_common_attributes(self):
+        """
+        In case there are no common attributes join should turn into Cartesian
+        Product.
+        """
+        metadata = MetaData(self.engine, reflect=True)
+        products = Table('products', metadata,
+                         Column('id', Integer, primary_key=True),
+                         Column('name', String(50), nullable=False))
+        regions = Table('regions', metadata,
+                        Column('id', Integer, primary_key=True),
+                        Column('region_name', String(50), nullable=False))
+
+        # This is the relation that connects first two not only via common
+        # attributes but, more importantly via Multivalued dependency (EMP):
+        # NULL -> product_id (region_id)
+        product_prices = Table('product_prices', metadata,
+                               Column('product_id', Integer,
+                                      ForeignKey('products.id'),
+                                      primary_key=True),
+                               Column('region_id', Integer,
+                                      ForeignKey('regions.id')),
+                               Column('price', Float))
+        metadata.create_all()
+
+        # populate with data
+        conn = self.engine.connect()
+        conn.execute(products.insert(), [
+            {'id': 1, 'name': 'Apples'},
+            {'id': 2, 'name': 'Bananas'}
+        ])
+        conn.execute(regions.insert(), [
+            {'id': 1, 'region_name': 'Alaska'},
+            {'id': 2, 'region_name': 'Texas'},
+            {'id': 3, 'region_name': 'California'},
+            {'id': 4, 'region_name': 'Florida'}
+        ])
+
+        sql_join = db.natural_join(self.engine, [
+            {'name': 'products', 'attributes': {'id': Integer,
+                                                'name': String}},
+            {'name': 'regions', 'attributes': {'id': Integer, 'name': String}},
+        ], [{'name': String}, {'region_name': String}])
+        join_result = sql_join.fetchall()
+        self.assertEqual(len(join_result), 4)
+        self.assertIn(('Jack Jones', 'jack@yahoo.com'), join_result)
+        self.assertNotIn(('Jack Jones', 'wendy@aol.com'), join_result)

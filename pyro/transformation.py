@@ -29,27 +29,28 @@ def closure(attributes, dependencies):
     return result
 
 
-def existing_join(_relations):
+def existing_join(relations):
     """
     Implementation of the Existing Join algorithm, building the proper sequence
     of relations that can be used for the Natural Join query
-    :param _relations: list of relations
+    :param relations: list of relations
     :return: permuted list of relations where each relation intersects with
     at least one of the previous relations
     """
-    relations = deepcopy(_relations)
-    rel_len = len(relations)
+    _relations = deepcopy(relations)
+    rel_len = len(_relations)
     point = 1
     for i in range(rel_len - 1):
         for j in range(point, rel_len):
-            if common_keys(relations[i]['attributes'],
-                           relations[j]['attributes']):
-                relations[point], relations[j] = relations[j], relations[point]
+            if common_keys(_relations[i]['attributes'],
+                           _relations[j]['attributes']):
+                _relations[point], _relations[j] = _relations[j],\
+                                                   _relations[point]
                 point += 1
         if point == rel_len:
-            return relations
+            return _relations
         if point == i + 1:
-            return relations[:point]
+            return _relations[:point]
 
 
 def prioritized_relations(relations, base_relations, dependencies,

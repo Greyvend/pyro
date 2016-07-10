@@ -40,7 +40,7 @@ def build(context, dependencies, source, cube):
     # create TJ in destination DB
     name = 'TJ_' + '_'.join(r['name'] for r in context)
     attributes = get_attributes(context, dependencies)
-    db.create_table(name, attributes, cube)
+    db.create_table(cube, name, attributes)
 
     # fill TJ with data
     tj_data = []

@@ -15,7 +15,7 @@ class TestCreateTable(DatabaseTestCase):
 
         self.assertEqual(len(metadata.tables), 0)
 
-        create_table(name, attributes, self.engine)
+        create_table(self.engine, name, attributes)
         metadata.reflect()
         self.assertEqual(len(metadata.tables), 1)
         self.assertEqual(len(metadata.tables['test_table'].columns), 2)
@@ -27,8 +27,8 @@ class TestCreateTable(DatabaseTestCase):
 
         self.assertEqual(len(metadata.tables), 0)
 
-        create_table(name, attributes, self.engine)
-        create_table(name, attributes, self.engine)
+        create_table(self.engine, name, attributes)
+        create_table(self.engine, name, attributes)
 
         metadata.reflect()
         self.assertEqual(len(metadata.tables), 1)

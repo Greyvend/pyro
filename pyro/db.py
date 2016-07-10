@@ -74,7 +74,7 @@ def get_schema(engine):
     return relations, dependencies
 
 
-def create_table(name, attributes, engine):
+def create_table(engine, name, attributes):
     """
     Execute CREATE TABLE on desired DB with specified name/attributes.
 

@@ -1,11 +1,12 @@
 from copy import deepcopy
 
 from sqlalchemy import Column, Table, MetaData, select, column
+from sqlalchemy.sql.elements import and_
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
 from sqlalchemy.exc import OperationalError
 
-from pyro.utils import containing_relation
+from pyro.utils import containing_relation, common_keys
 
 
 def transform_column_type(column_type):
@@ -90,7 +91,7 @@ def create_table(name, attributes, engine):
             raise
 
 
-def get_columns_to_select(metadata, relations, attributes):
+def _attrs_to_columns(metadata, relations, attributes):
     """
     Retrieve all those columns from `attributes` that actually exist in
     `relations` list of relations. Set table name for those columns so they are
@@ -102,7 +103,7 @@ def get_columns_to_select(metadata, relations, attributes):
     :return: list of resulting columns
     :rtype: sqlalchemy.Column
     """
-    columns = map(lambda a: column(a.keys()[0]), attributes)
+    columns = map(column, attributes.keys())
     for col in columns:
         try:
             relation = containing_relation(relations, col.name)
@@ -115,10 +116,20 @@ def get_columns_to_select(metadata, relations, attributes):
 
 def natural_join(engine, relations, attributes):
     metadata = MetaData(engine, reflect=True)
-    tables = map(lambda r: metadata.tables[r['name']], relations)
-    join_expr = reduce(lambda j, t: j.join(t), tables)
-    select_columns = get_columns_to_select(metadata, relations, attributes)
-    s = select(select_columns).select_from(join_expr)
+
+    bin_exprs = ()
+    for i, r in enumerate(relations):
+        next_relations = deepcopy(relations[i+1:])
+        for r2 in next_relations:
+            common_attrs = common_keys(r['attributes'], r2['attributes'])
+            bin_exprs = reduce(
+                lambda t, a: t + (metadata.tables[r['name']].columns[a] ==
+                                  metadata.tables[r2['name']].columns[a],),
+                common_attrs, bin_exprs)
+
+    where_expr = and_(*bin_exprs)
+    columns = _attrs_to_columns(metadata, relations, attributes)
+    s = select(columns).where(where_expr)
     conn = engine.connect()
     result = conn.execute(s)
     return result

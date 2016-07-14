@@ -9,7 +9,7 @@ from sqlalchemy.exc import OperationalError
 from pyro.utils import containing_relation, common_keys
 
 
-def transform_column_type(column_type):
+def _transform_column_type(column_type):
     """
     Make necessary transformation of `column_type` to one of the base
     SQLAlchemy types or the one with `collation` and `encoding` attributes set
@@ -30,6 +30,29 @@ def transform_column_type(column_type):
     new_type.collation = None
     new_type.encoding = 'utf-8'
     return new_type
+
+
+def _attrs_to_columns(metadata, relations, attributes):
+    """
+    Retrieve all those columns from `attributes` that actually exist in
+    `relations` list of relations. Set table name for those columns so they are
+    ready for selection query.
+
+    :param metadata: SQLAlchemy metadata bound to the DB engine
+    :param relations: list of relations to consider
+    :param attributes: list of attributes to filter
+    :return: list of resulting columns
+    :rtype: sqlalchemy.Column
+    """
+    columns = map(column, attributes.keys())
+    for col in columns:
+        try:
+            relation = containing_relation(relations, col.name)
+        except ValueError:
+            columns.remove(col)
+        else:
+            col.table = metadata.tables[relation['name']]
+    return columns
 
 
 def get_schema(engine):
@@ -53,7 +76,7 @@ def get_schema(engine):
     # fill dependencies from Primary keys and Unique constraints
     for table, table_data in metadata.tables.iteritems():
         # update relations
-        attributes = {column.name: transform_column_type(column.type)
+        attributes = {column.name: _transform_column_type(column.type)
                       for column in table_data.columns}
         pk = {column.name for column in table_data.primary_key.columns}
 
@@ -89,29 +112,6 @@ def create_table(engine, name, attributes):
     except OperationalError as e:
         if 'already exists' not in e.args[0]:
             raise
-
-
-def _attrs_to_columns(metadata, relations, attributes):
-    """
-    Retrieve all those columns from `attributes` that actually exist in
-    `relations` list of relations. Set table name for those columns so they are
-    ready for selection query.
-
-    :param metadata: SQLAlchemy metadata bound to the DB engine
-    :param relations: list of relations to consider
-    :param attributes: list of attributes to filter
-    :return: list of resulting columns
-    :rtype: sqlalchemy.Column
-    """
-    columns = map(column, attributes.keys())
-    for col in columns:
-        try:
-            relation = containing_relation(relations, col.name)
-        except ValueError:
-            columns.remove(col)
-        else:
-            col.table = metadata.tables[relation['name']]
-    return columns
 
 
 def natural_join(engine, relations, attributes):

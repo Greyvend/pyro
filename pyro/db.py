@@ -130,6 +130,9 @@ def natural_join(engine, relations, attributes):
     where_expr = and_(*bin_exprs)
     columns = _attrs_to_columns(metadata, relations, attributes)
     s = select(columns).where(where_expr)
+    return s
+
+
+def execute(engine, query):
     conn = engine.connect()
-    result = conn.execute(s)
-    return result
+    return conn.execute(query)

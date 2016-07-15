@@ -3,7 +3,7 @@ from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
 from sqlalchemy.dialects.mysql import REAL
 
 from pyro import db
-from pyro.db import create_table, transform_column_type
+from pyro.db import create_table, _transform_column_type
 from tests.alchemy import DatabaseTestCase
 
 
@@ -39,14 +39,14 @@ class TestTransformColumnType(DatabaseTestCase):
         integer = Integer()
         str = String(15)
         binary = _Binary()
-        self.assertEqual(transform_column_type(integer), Integer)
-        self.assertEqual(transform_column_type(str), Text)
-        self.assertEqual(transform_column_type(binary), LargeBinary)
+        self.assertEqual(_transform_column_type(integer), Integer)
+        self.assertEqual(_transform_column_type(str), Text)
+        self.assertEqual(_transform_column_type(binary), LargeBinary)
 
     def test_unhandled_type(self):
         real = REAL()
 
-        transformed_type = transform_column_type(real)
+        transformed_type = _transform_column_type(real)
         self.assertIsNone(transformed_type.collation)
         self.assertEqual(transformed_type.encoding, 'utf-8')
 
@@ -85,7 +85,7 @@ class TestJoin(DatabaseTestCase):
                                                  'user_id': Integer,
                                                  'email_address': String}},
         ], {'user_fullname': String, 'email_address': String})
-        join_result = sql_join.fetchall()
+        join_result = conn.execute(sql_join).fetchall()
         self.assertEqual(len(join_result), 4)
         self.assertIn(('Jack Jones', 'jack@yahoo.com'), join_result)
         self.assertNotIn(('Jack Jones', 'wendy@aol.com'), join_result)
@@ -136,7 +136,7 @@ class TestJoin(DatabaseTestCase):
                                              'discipline_id': Integer,
                                              'mark': Integer}},
         ], {'student_fullname': String, 'mark': String})
-        join_result = sql_join.fetchall()
+        join_result = conn.execute(sql_join).fetchall()
         self.assertEqual(len(join_result), 2)
         self.assertIn(('Jack Jones', 5), join_result)
         self.assertNotIn(('Jack Jones', 3), join_result)
@@ -174,7 +174,7 @@ class TestJoin(DatabaseTestCase):
             {'name': 'regions', 'attributes': {'region_id': Integer,
                                                'region_name': String}},
         ], {'product_name': String, 'region_name': String})
-        join_result = sql_join.fetchall()
+        join_result = conn.execute(sql_join).fetchall()
         self.assertEqual(len(join_result), 8)
         self.assertIn(('Apples', 'Alaska'), join_result)
         self.assertIn(('Bananas', 'California'), join_result)
@@ -234,7 +234,7 @@ class TestJoin(DatabaseTestCase):
             {'name': 'regions', 'attributes': {'region_id': Integer,
                                                'region_name': String}}
         ], {'product_name': String, 'region_name': String, 'price': Float})
-        join_result = sql_join.fetchall()
+        join_result = conn.execute(sql_join).fetchall()
         self.assertEqual(len(join_result), 5)
         self.assertIn((45.32, 'Apples', 'Alaska'), join_result)
         self.assertNotIn((12.6, 'Bananas', 'Texas'), join_result)

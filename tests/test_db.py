@@ -3,7 +3,7 @@ from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
 from sqlalchemy.dialects.mysql import REAL
 
 from pyro import db
-from pyro.db import create_table, _transform_column_type
+from pyro.db import create_table, _transform_column_type, _execute
 from tests.alchemy import DatabaseTestCase
 
 
@@ -37,10 +37,10 @@ class TestCreateTable(DatabaseTestCase):
 class TestTransformColumnType(DatabaseTestCase):
     def test_handled_types(self):
         integer = Integer()
-        str = String(15)
+        _str = String(15)
         binary = _Binary()
         self.assertEqual(_transform_column_type(integer), Integer)
-        self.assertEqual(_transform_column_type(str), Text)
+        self.assertEqual(_transform_column_type(_str), Text)
         self.assertEqual(_transform_column_type(binary), LargeBinary)
 
     def test_unhandled_type(self):
@@ -49,6 +49,32 @@ class TestTransformColumnType(DatabaseTestCase):
         transformed_type = _transform_column_type(real)
         self.assertIsNone(transformed_type.collation)
         self.assertEqual(transformed_type.encoding, 'utf-8')
+
+
+class TestExecute(DatabaseTestCase):
+    def test_single_row_result(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        # populate with data
+        conn = self.engine.connect()
+        conn.execute(users.insert(), [
+            {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+            {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+        ])
+        s = users.select()
+
+        res = _execute(self.engine, s)
+
+        first_row = res[0]
+        self.assertEqual(first_row['user_name'], 'jack')
+        self.assertEqual(first_row['user_fullname'], 'Jack Jones')
+        second_row = res[1]
+        self.assertEqual(second_row['user_name'], 'wendy')
+        self.assertEqual(second_row['user_fullname'], 'Wendy Williams')
 
 
 class TestJoin(DatabaseTestCase):
@@ -77,7 +103,7 @@ class TestJoin(DatabaseTestCase):
             {'user_id': 2, 'email_address': 'wendy@aol.com'},
         ])
 
-        sql_join = db.natural_join(self.engine, [
+        join_result = db.natural_join(self.engine, [
             {'name': 'users', 'attributes': {'user_id': Integer,
                                              'user_name': String,
                                              'user_fullname': String}},
@@ -85,10 +111,12 @@ class TestJoin(DatabaseTestCase):
                                                  'user_id': Integer,
                                                  'email_address': String}},
         ], {'user_fullname': String, 'email_address': String})
-        join_result = conn.execute(sql_join).fetchall()
+
         self.assertEqual(len(join_result), 4)
-        self.assertIn(('Jack Jones', 'jack@yahoo.com'), join_result)
-        self.assertNotIn(('Jack Jones', 'wendy@aol.com'), join_result)
+        self.assertIn({'user_fullname': 'Jack Jones',
+                       'email_address': 'jack@yahoo.com'}, join_result)
+        self.assertNotIn({'user_fullname': 'Jack Jones',
+                          'email_address': 'wendy@aol.com'}, join_result)
 
     def test_2_relations_2_common_attribute(self):
         metadata = MetaData(self.engine, reflect=True)
@@ -127,7 +155,7 @@ class TestJoin(DatabaseTestCase):
             {'student_id': 1, 'group_id': 803, 'discipline_id': 2, 'mark': 5},
         ])
 
-        sql_join = db.natural_join(self.engine, [
+        join_result = db.natural_join(self.engine, [
             {'name': 'students', 'attributes': {'student_id': Integer,
                                                 'group_id': String,
                                                 'student_fullname': String}},
@@ -136,10 +164,12 @@ class TestJoin(DatabaseTestCase):
                                              'discipline_id': Integer,
                                              'mark': Integer}},
         ], {'student_fullname': String, 'mark': String})
-        join_result = conn.execute(sql_join).fetchall()
+
         self.assertEqual(len(join_result), 2)
-        self.assertIn(('Jack Jones', 5), join_result)
-        self.assertNotIn(('Jack Jones', 3), join_result)
+        self.assertIn({'student_fullname': 'Jack Jones',
+                       'mark': 5}, join_result)
+        self.assertNotIn({'student_fullname': 'Jack Jones',
+                          'mark': 3}, join_result)
 
     def test_2_relations_no_common_attributes(self):
         """
@@ -168,17 +198,20 @@ class TestJoin(DatabaseTestCase):
             {'region_id': 4, 'region_name': 'Florida'}
         ])
 
-        sql_join = db.natural_join(self.engine, [
+        join_result = db.natural_join(self.engine, [
             {'name': 'products', 'attributes': {'product_id': Integer,
                                                 'product_name': String}},
             {'name': 'regions', 'attributes': {'region_id': Integer,
                                                'region_name': String}},
         ], {'product_name': String, 'region_name': String})
-        join_result = conn.execute(sql_join).fetchall()
+
         self.assertEqual(len(join_result), 8)
-        self.assertIn(('Apples', 'Alaska'), join_result)
-        self.assertIn(('Bananas', 'California'), join_result)
-        self.assertIn(('Bananas', 'Florida'), join_result)
+        self.assertIn({'product_name': 'Apples',
+                       'region_name': 'Alaska'}, join_result)
+        self.assertIn({'product_name': 'Bananas',
+                       'region_name': 'California'}, join_result)
+        self.assertIn({'product_name': 'Bananas',
+                       'region_name': 'Florida'}, join_result)
 
     def test_3_relations_single_path(self):
         """
@@ -225,7 +258,7 @@ class TestJoin(DatabaseTestCase):
             {'price_id': 5, 'product_id': 2, 'region_id': 4, 'price': 8.55}
         ])
 
-        sql_join = db.natural_join(self.engine, [
+        join_result = db.natural_join(self.engine, [
             {'name': 'product_prices',
              'attributes': {'price_id': Integer, 'product_id': Integer,
                             'region_id': Integer, 'price': Float}},
@@ -234,7 +267,9 @@ class TestJoin(DatabaseTestCase):
             {'name': 'regions', 'attributes': {'region_id': Integer,
                                                'region_name': String}}
         ], {'product_name': String, 'region_name': String, 'price': Float})
-        join_result = conn.execute(sql_join).fetchall()
+
         self.assertEqual(len(join_result), 5)
-        self.assertIn((45.32, 'Apples', 'Alaska'), join_result)
-        self.assertNotIn((12.6, 'Bananas', 'Texas'), join_result)
+        self.assertIn({'product_name': 'Apples',
+                       'region_name': 'Alaska', 'price': 45.32}, join_result)
+        self.assertNotIn({'product_name': 'Bananas',
+                          'region_name': 'Texas', 'price': 12.6}, join_result)

@@ -101,9 +101,9 @@ def create_table(engine, name, attributes):
     """
     Execute CREATE TABLE on desired DB with specified name/attributes.
 
+    :param engine: SQLAlchemy engine to be used
     :param name: table name
     :param attributes: dict of (name, type) pairs representing table columns
-    :param engine: SQLAlchemy engine to be used
     """
     cube_metadata = MetaData(engine)
     columns = {Column(name, type) for name, type in attributes.iteritems()}
@@ -112,6 +112,20 @@ def create_table(engine, name, attributes):
     except OperationalError as e:
         if 'already exists' not in e.args[0]:
             raise
+
+
+def _execute(engine, query):
+    """
+    Execute SQLAlchemy query and then transform query result object into list
+    of dicts representing result rows
+
+    :param engine: SQLAlchemy engine to be used
+    :param query: SQLAlchemy query
+    :return: list of dicts, each representing a row in DB
+    """
+    conn = engine.connect()
+    result_proxy = conn.execute(query)
+    return [dict(r) for r in result_proxy.fetchall()]
 
 
 def natural_join(engine, relations, attributes):
@@ -130,9 +144,4 @@ def natural_join(engine, relations, attributes):
     where_expr = and_(*bin_exprs)
     columns = _attrs_to_columns(metadata, relations, attributes)
     s = select(columns).where(where_expr)
-    return s
-
-
-def execute(engine, query):
-    conn = engine.connect()
-    return conn.execute(query)
+    return _execute(engine, s)

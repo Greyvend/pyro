@@ -1,8 +1,10 @@
 def all_attributes(relations):
     """
-    Set of all attributes of given relations
-    :param relations:
-    :return:
+    Set of all attribute names found in given relations
+
+    :type relations: list
+    :param relations: relations to scan
+    :return: set of strings
     """
     attributes = (r['attributes'] for r in relations)
     return set().union(*attributes)
@@ -17,7 +19,7 @@ def containing_relation(relations, attribute):
     :param attribute: name of the attribute
     """
     for r in relations:
-        if attribute in r['attributes']:
+        if set(attribute).issubset(r['attributes']):
             return r
     raise ValueError('Attribute was not found in the relations specified')
 

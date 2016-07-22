@@ -1,6 +1,32 @@
 from unittest import TestCase
 
-from pyro.utils import containing_relation, min_dict, all_equal
+from pyro.utils import containing_relation, min_dict, all_equal, all_attributes
+
+
+class TestAllAttributes(TestCase):
+    def test_no_intersecting_attributes(self):
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
+              'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
+              'pk': {'C'}}
+        r3 = {'name': 'R3', 'attributes': {'E': 'INT', 'F': 'INT'},
+              'pk': {'E'}}
+        relations = [r1, r2, r3]
+
+        attributes = all_attributes(relations)
+        self.assertEqual(attributes, {'A', 'B', 'C', 'D', 'E', 'F'})
+
+    def test_intersecting_attributes(self):
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
+              'pk': {'A'}}
+        r2 = {'name': 'R2', 'attributes': {'A': 'INT', 'C': 'INT'},
+              'pk': {'C'}}
+        r3 = {'name': 'R3', 'attributes': {'B': 'INT', 'C': 'INT'},
+              'pk': {'B'}}
+        relations = [r1, r2, r3]
+
+        attributes = all_attributes(relations)
+        self.assertEqual(attributes, {'A', 'B', 'C'})
 
 
 class TestContainingRelation(TestCase):
@@ -19,6 +45,7 @@ class TestContainingRelation(TestCase):
 
     def test_one_containing_relation(self):
         attribute = 'D'
+        dict_attribute = {'D': 'INT'}
         r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
               'pk': {'A'}}
         r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
@@ -28,6 +55,8 @@ class TestContainingRelation(TestCase):
         relations = [r1, r2, r3]
 
         self.assertDictEqual(containing_relation(relations, attribute), r2)
+        self.assertDictEqual(containing_relation(relations, dict_attribute),
+                             r2)
 
     def test_two_containing_relations(self):
         attribute = 'B'

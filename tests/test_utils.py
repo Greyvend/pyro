@@ -14,7 +14,8 @@ class TestAllAttributes(TestCase):
         relations = [r1, r2, r3]
 
         attributes = all_attributes(relations)
-        self.assertEqual(attributes, {'A', 'B', 'C', 'D', 'E', 'F'})
+        self.assertEqual(attributes, {'A': 'INT', 'B': 'INT', 'C': 'INT',
+                                      'D': 'INT', 'E': 'INT', 'F': 'INT'})
 
     def test_intersecting_attributes(self):
         r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
@@ -26,7 +27,7 @@ class TestAllAttributes(TestCase):
         relations = [r1, r2, r3]
 
         attributes = all_attributes(relations)
-        self.assertEqual(attributes, {'A', 'B', 'C'})
+        self.assertEqual(attributes, {'A': 'INT', 'B': 'INT', 'C': 'INT'})
 
 
 class TestContainingRelation(TestCase):
@@ -44,31 +45,31 @@ class TestContainingRelation(TestCase):
                           attribute)
 
     def test_one_containing_relation(self):
-        attribute = 'D'
-        dict_attribute = {'D': 'INT'}
+        attribute_name = 'DD'
         r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
               'pk': {'A'}}
-        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'DD': 'INT'},
               'pk': {'C'}}
         r3 = {'name': 'R3', 'attributes': {'E': 'INT', 'F': 'INT'},
               'pk': {'E'}}
         relations = [r1, r2, r3]
 
-        self.assertDictEqual(containing_relation(relations, attribute), r2)
-        self.assertDictEqual(containing_relation(relations, dict_attribute),
+        self.assertDictEqual(containing_relation(relations, attribute_name),
                              r2)
 
     def test_two_containing_relations(self):
-        attribute = 'B'
-        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
+        attribute_name = 'Bob'
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'Bob': 'INT'},
               'pk': {'A'}}
-        r2 = {'name': 'R2', 'attributes': {'B': 'INT', 'D': 'INT'},
-              'pk': {'B'}}
+        r2 = {'name': 'R2', 'attributes': {'Bob': 'INT', 'D': 'INT'},
+              'pk': {'Bob'}}
         r3 = {'name': 'R3', 'attributes': {'E': 'INT', 'F': 'INT'},
               'pk': {'E'}}
 
-        self.assertDictEqual(containing_relation([r1, r2, r3], attribute), r1)
-        self.assertDictEqual(containing_relation([r2, r1, r3], attribute), r2)
+        self.assertDictEqual(containing_relation([r1, r2, r3], attribute_name),
+                             r1)
+        self.assertDictEqual(containing_relation([r2, r1, r3], attribute_name),
+                             r2)
 
 
 class TestMinDict(TestCase):

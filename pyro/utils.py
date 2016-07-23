@@ -1,25 +1,26 @@
 def all_attributes(relations):
     """
-    Set of all attribute names found in given relations
+    All attributes found in given relations
 
     :type relations: list
     :param relations: relations to scan
-    :return: set of strings
+    :return: dict, containing all common attributes
     """
-    attributes = (r['attributes'] for r in relations)
-    return set().union(*attributes)
+    attribute_dicts = (r['attributes'] for r in relations)
+    # merge attribute dictionaries
+    return {k: v for attrs in attribute_dicts for k, v in attrs.iteritems()}
 
 
-def containing_relation(relations, attribute):
+def containing_relation(relations, attribute_name):
     # type: (list, str) -> dict
     """
     Find relation among provided that contains specified attribute.
 
     :param relations: list of relations
-    :param attribute: name of the attribute
+    :param attribute_name: name of the attribute to search
     """
     for r in relations:
-        if set(attribute).issubset(r['attributes']):
+        if attribute_name in r['attributes']:
             return r
     raise ValueError('Attribute was not found in the relations specified')
 

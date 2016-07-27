@@ -31,30 +31,6 @@ def get_attributes(context, dependencies):
     return attributes
 
 
-def is_empty_attr(context, row, attribute_name):
-    """
-    Attribute attr in row is considered empty if it has value None and
-    its vector doesn't contain any relations having given attribute in their
-    schema.
-
-    :param context: context to apply
-    :type context: list of dicts representing relations
-    :param row: target row
-    :type row: dict
-    :param attribute_name: target attribute name
-    :type attribute_name: str
-    :return: True - if the attribute value in row is empty, False otherwise
-    """
-    if row[attribute_name] is not None:
-        return False
-    row_relation_names = decode_vector(row)
-    row_relations = filter(lambda rel: rel['name'] in row_relation_names,
-                           context)
-    if not containing_relation(row_relations, attribute_name):
-        return True
-    return False
-
-
 def encode_vector(relations):
     """
     Serialize to string containing relation names.
@@ -62,7 +38,7 @@ def encode_vector(relations):
     Example:
 
         relations = [{"name": "users"}, {"name": "addresses"},
-                     {"name" :"payments"}, {"name": "pictures"}]
+                     {"name": "payments"}, {"name": "pictures"}]
 
     will return
 
@@ -90,6 +66,30 @@ def decode_vector(row):
     return row[VECTOR_ATTRIBUTE].split(VECTOR_SEPARATOR)
 
 
+def is_empty_attr(context, row, attribute_name):
+    """
+    Attribute attr in row is considered empty if it has value None and
+    its vector doesn't contain any relations having given attribute in their
+    schema.
+
+    :param context: context to apply
+    :type context: list of dicts representing relations
+    :param row: target row
+    :type row: dict
+    :param attribute_name: target attribute name
+    :type attribute_name: str
+    :return: True - if the attribute value in row is empty, False otherwise
+    """
+    if row[attribute_name] is not None:
+        return False
+    row_relation_names = decode_vector(row)
+    row_relations = filter(lambda rel: rel['name'] in row_relation_names,
+                           context)
+    if not containing_relation(row_relations, attribute_name):
+        return True
+    return False
+
+
 def is_less_or_equal(v1, v2):
     """
     Make comparison of two vectors. Return true if first is less than or equal
@@ -103,7 +103,7 @@ def is_less_or_equal(v1, v2):
 
 
 def is_subordinate(context, r1, r2):
-    if is_less_or_equal(decode_vector(r1), decode_vector(r2)):
+    if is_less_or_equal(*map(decode_vector, [r1, r2])):
         return False
     attributes = all_attributes(context)
     for attr in attributes:

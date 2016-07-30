@@ -139,12 +139,13 @@ def build(context, dependencies, source, cube):
     :param cube: SQLAlchemy engine for cube DB
     """
     # create TJ in destination DB
-    tj = 'TJ_' + '_'.join(r['name'] for r in context)
+    tj_name = 'TJ_' + '_'.join(r['name'] for r in context)
     attributes = get_attributes(context, dependencies)
     # add vector attribute holding information about participating relations
     full_schema = attributes.copy()
     full_schema.update({VECTOR_ATTRIBUTE: String})
-    db.create_table(cube, tj, full_schema)
+    tj = {'name': tj_name, 'attributes': full_schema}
+    db.create_table(cube, tj)
 
     # fill TJ with data
     relations_gen = lossless_combinations(context, dependencies)
@@ -155,7 +156,7 @@ def build(context, dependencies, source, cube):
         for row in join_data:
             row[VECTOR_ATTRIBUTE] = VECTOR_SEPARATOR.join(r['name']
                                                           for r in relations)
-        tj_data = db.get_relation_data(cube, tj)
+        tj_data = db.get_rows(cube, tj)
         rows_to_delete = filter_subordinate_rows(context, tj_data, join_data)
         delete_rows(cube, tj, rows_to_delete)
         insert_rows(cube, tj, join_data)

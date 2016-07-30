@@ -36,25 +36,25 @@ class TestFetchMechanism(DatabaseTestCase):
 class TestCreateTable(DatabaseTestCase):
     def test_new_table(self):
         metadata = MetaData(self.engine, reflect=True)
-        name = 'test_table'
-        attributes = {'first': Integer, 'second': String(10)}
+        relation = {'name': 'test_table', 'attributes': {'first': Integer,
+                                                         'second': String(10)}}
 
         self.assertEqual(len(metadata.tables), 0)
 
-        create_table(self.engine, name, attributes)
+        create_table(self.engine, relation)
         metadata.reflect()
         self.assertEqual(len(metadata.tables), 1)
         self.assertEqual(len(metadata.tables['test_table'].columns), 2)
 
     def test_idempotence(self):
         metadata = MetaData(self.engine, reflect=True)
-        name = 'test_table'
-        attributes = {'first': Integer, 'second': String(10)}
+        relation = {'name': 'test_table', 'attributes': {'first': Integer,
+                                                         'second': String(10)}}
 
         self.assertEqual(len(metadata.tables), 0)
 
-        create_table(self.engine, name, attributes)
-        create_table(self.engine, name, attributes)
+        create_table(self.engine, relation)
+        create_table(self.engine, relation)
 
         metadata.reflect()
         self.assertEqual(len(metadata.tables), 1)

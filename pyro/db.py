@@ -98,18 +98,18 @@ def get_schema(engine):
     return relations, dependencies
 
 
-def create_table(engine, name, attributes):
+def create_table(engine, relation):
     """
     Execute CREATE TABLE on desired DB with specified name/attributes.
 
     :param engine: SQLAlchemy engine to be used
-    :param name: table name
-    :param attributes: dict of (name, type) pairs representing table columns
+    :param relation: table name
     """
     cube_metadata = MetaData(engine)
-    columns = {Column(name, type) for name, type in attributes.iteritems()}
+    columns = {Column(name, type) for name, type in
+               relation['attributes'].iteritems()}
     try:
-        Table(name, cube_metadata, *columns).create(engine)
+        Table(relation['name'], cube_metadata, *columns).create(engine)
     except OperationalError as e:
         if 'already exists' not in e.args[0]:
             raise
@@ -157,5 +157,4 @@ def get_rows(engine, relation):
     """
     s = select(columns=map(column, relation['attributes'].keys()),
                from_obj=table(relation['name']))
-    # s = table(relation['name']).select(relation['attributes'].keys())
     return _execute(engine, s)

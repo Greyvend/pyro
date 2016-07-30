@@ -3,8 +3,34 @@ from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
 from sqlalchemy.dialects.mysql import REAL
 
 from pyro import db
-from pyro.db import create_table, _transform_column_type, _execute
+from pyro.db import create_table, _transform_column_type, _execute, \
+    get_rows
 from tests.alchemy import DatabaseTestCase
+
+
+class TestFetchMechanism(DatabaseTestCase):
+    def test(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        # populate with data
+        conn = self.engine.connect()
+        conn.execute(users.insert(), [
+            {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+            {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+        ])
+
+        # case 1: all at once
+        res = conn.execute(users.select())
+        all_records = res.fetchall()
+
+        # case 2: fetch rows one by one
+        res = conn.execute(users.select())
+        first_row = res.fetchone()
+        second_row = res.fetchone()
 
 
 class TestCreateTable(DatabaseTestCase):
@@ -65,9 +91,8 @@ class TestExecute(DatabaseTestCase):
             {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
             {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
         ])
-        s = users.select()
 
-        res = _execute(self.engine, s)
+        res = _execute(self.engine, users.select())
 
         first_row = res[0]
         self.assertEqual(first_row['user_name'], 'jack')
@@ -273,3 +298,29 @@ class TestJoin(DatabaseTestCase):
                        'region_name': 'Alaska', 'price': 45.32}, join_result)
         self.assertNotIn({'product_name': 'Bananas',
                           'region_name': 'Texas', 'price': 12.6}, join_result)
+
+
+class TestGetRows(DatabaseTestCase):
+    def test(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        # populate with data
+        conn = self.engine.connect()
+        conn.execute(users.insert(), [
+            {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+            {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+        ])
+
+        res = get_rows(self.engine, {'name': users.name,
+                                     'attributes': users.c._data})
+
+        first_row = res[0]
+        self.assertEqual(first_row['user_name'], 'jack')
+        self.assertEqual(first_row['user_fullname'], 'Jack Jones')
+        second_row = res[1]
+        self.assertEqual(second_row['user_name'], 'wendy')
+        self.assertEqual(second_row['user_fullname'], 'Wendy Williams')

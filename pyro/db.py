@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from sqlalchemy import Column, Table, MetaData, select, column
+from sqlalchemy import table
 from sqlalchemy.sql.elements import and_
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
@@ -144,4 +145,17 @@ def natural_join(engine, relations, attributes):
     where_expr = and_(*bin_exprs)
     columns = _attrs_to_columns(metadata, relations, attributes)
     s = select(columns).where(where_expr)
+    return _execute(engine, s)
+
+
+def get_rows(engine, relation):
+    """
+    Obtains all table rows from Database. Performs SELECT under the hood.
+
+    :param engine: SQLAlchemy engine to be used
+    :param relation: relation to scan
+    """
+    s = select(columns=map(column, relation['attributes'].keys()),
+               from_obj=table(relation['name']))
+    # s = table(relation['name']).select(relation['attributes'].keys())
     return _execute(engine, s)

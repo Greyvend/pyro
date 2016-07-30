@@ -85,7 +85,9 @@ def is_empty_attr(context, row, attribute_name):
     row_relation_names = decode_vector(row)
     row_relations = filter(lambda rel: rel['name'] in row_relation_names,
                            context)
-    if not containing_relation(row_relations, attribute_name):
+    try:
+        containing_relation(row_relations, attribute_name)
+    except ValueError:
         return True
     return False
 
@@ -103,14 +105,13 @@ def is_less_or_equal(v1, v2):
 
 
 def is_subordinate(context, r1, r2):
-    if is_less_or_equal(*map(decode_vector, [r1, r2])):
+    if not is_less_or_equal(*map(decode_vector, [r1, r2])):
         return False
     attributes = all_attributes(context)
     for attr in attributes:
-        if r1[attr] != r2[attr] or r1[attr] == r2[attr] == None:
-            if r1[attr] is not None or not is_empty_attr(context, r1, attr):
-                # TODO: check that second condition isn't checked if first succeeds
-                return False
+        if r1[attr] != r2[attr] and not is_empty_attr(context, r1, attr):
+            return False
+    return True
 
 
 def filter_subordinate_rows(context, tj_data, new_data):

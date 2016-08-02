@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # get multi valued dependencies from the config
     mvd = config.get('multi valued dependencies', [])
     # transform lists of attributes to sets of attributes
-    mvd = [{part: set(attributes) for part, attributes in dep.iteritems()}
+    mvd = [{part: set(attributes) for part, attributes in dep.items()}
            for dep in mvd]
     dependencies.extend(mvd)
 
@@ -36,13 +36,13 @@ if __name__ == '__main__':
         base = set(map(relation_name, dimension['attributes']))
         base_total |= base
         # for now pick first found context
-        context = transformation.contexts(relations, base, dependencies).next()
+        context = next(transformation.contexts(relations, base, dependencies))
         contexts.append(context)
 
     # build application context
     try:
-        app_context = transformation.contexts(relations, base_total,
-                                              dependencies).next()
+        app_context = next(transformation.contexts(relations, base_total,
+                                                   dependencies))
     except StopIteration:
         # no combination satisfies Lossless Join property. Pick all relations
         app_context = relations

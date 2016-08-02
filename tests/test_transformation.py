@@ -176,9 +176,9 @@ class TestContexts(TestCase):
         r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT'},
               'pk': {'A'}}
         contexts_gen = contexts(all_relations=[r1], base=[], dependencies=[])
-        first_context = contexts_gen.next()
+        first_context = next(contexts_gen)
         self.assertEqual(first_context, [r1])
-        self.assertRaises(StopIteration, contexts_gen.next)
+        self.assertRaises(StopIteration, next, contexts_gen)
 
     def test_no_base_2_relations(self):
         """
@@ -192,9 +192,9 @@ class TestContexts(TestCase):
               'pk': {'C'}}
         contexts_gen = contexts(all_relations=[r1, r2], base=[],
                                 dependencies=[])
-        self.assertEqual(contexts_gen.next(), [r1])
-        self.assertEqual(contexts_gen.next(), [r2])
-        self.assertRaises(StopIteration, contexts_gen.next)
+        self.assertEqual(next(contexts_gen), [r1])
+        self.assertEqual(next(contexts_gen), [r2])
+        self.assertRaises(StopIteration, next, contexts_gen)
 
         # case 2: lossless succeeds
         r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT', 'C': 'INT'},
@@ -204,10 +204,10 @@ class TestContexts(TestCase):
         deps = [{'left': {'C'}, 'right': {'D'}}]
         contexts_gen = contexts(all_relations=[r1, r2], base=[],
                                 dependencies=deps)
-        self.assertEqual(contexts_gen.next(), [r1])
-        self.assertEqual(contexts_gen.next(), [r2])
-        self.assertEqual(contexts_gen.next(), [r1, r2])
-        self.assertRaises(StopIteration, contexts_gen.next)
+        self.assertEqual(next(contexts_gen), [r1])
+        self.assertEqual(next(contexts_gen), [r2])
+        self.assertEqual(next(contexts_gen), [r1, r2])
+        self.assertRaises(StopIteration, next, contexts_gen)
 
     def test_with_base_relations(self):
         """
@@ -227,6 +227,6 @@ class TestContexts(TestCase):
         ]
         contexts_gen = contexts(all_relations=[r1, r2, r3], base=['R1'],
                                 dependencies=deps)
-        self.assertEqual(contexts_gen.next(), [r1])
-        self.assertEqual(contexts_gen.next(), [r1, r2, r3])
-        self.assertRaises(StopIteration, contexts_gen.next)
+        self.assertEqual(next(contexts_gen), [r1])
+        self.assertEqual(next(contexts_gen), [r1, r2, r3])
+        self.assertRaises(StopIteration, next, contexts_gen)

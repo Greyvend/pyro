@@ -17,7 +17,7 @@ class TestBuildTableau(TestCase):
         # all values of this table should be equal to the keys as all
         # attributes are present in both tables
         for row in tableau:
-            for k, v in row.iteritems():
+            for k, v in row.items():
                 self.assertEqual((k,), v)
 
     def test_all_different_attributes(self):

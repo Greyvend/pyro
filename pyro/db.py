@@ -1,11 +1,12 @@
 from copy import deepcopy
+from functools import reduce
 
 from sqlalchemy import Column, Table, MetaData, select, column
 from sqlalchemy import table
 from sqlalchemy.sql.elements import and_
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import InternalError
 
 from pyro.utils import containing_relation, common_keys
 
@@ -49,11 +50,10 @@ def _attrs_to_columns(metadata, relations, attributes):
     for col in columns:
         try:
             relation = containing_relation(relations, col.name)
-        except ValueError:
-            columns.remove(col)
-        else:
             col.table = metadata.tables[relation['name']]
-    return columns
+            yield col
+        except ValueError:
+            pass
 
 
 def get_schema(engine):
@@ -75,7 +75,7 @@ def get_schema(engine):
     relations = []
     dependencies = []
     # fill dependencies from Primary keys and Unique constraints
-    for table, table_data in metadata.tables.iteritems():
+    for table, table_data in metadata.tables.items():
         # update relations
         attributes = {column.name: _transform_column_type(column.type)
                       for column in table_data.columns}
@@ -107,10 +107,10 @@ def create_table(engine, relation):
     """
     cube_metadata = MetaData(engine)
     columns = {Column(name, type) for name, type in
-               relation['attributes'].iteritems()}
+               relation['attributes'].items()}
     try:
         Table(relation['name'], cube_metadata, *columns).create(engine)
-    except OperationalError as e:
+    except InternalError as e:
         if 'already exists' not in e.args[0]:
             raise
 

@@ -8,7 +8,7 @@ def all_attributes(relations):
     """
     attribute_dicts = (r['attributes'] for r in relations)
     # merge attribute dictionaries
-    return {k: v for attrs in attribute_dicts for k, v in attrs.iteritems()}
+    return {k: v for attrs in attribute_dicts for k, v in attrs.items()}
 
 
 def containing_relation(relations, attribute_name):
@@ -59,18 +59,19 @@ def min_dict(d1, d2):
     return result
 
 
-def all_equal(iterable):
+def all_equal(iterator):
     """
-    Check that all values of iterable are equal
+    Check that all values of iterable (interfaced by iterator) are equal
 
-    :param iterable: any iterable
+    :param iterator: any iterator, might be empty
     :return: True if all values are equal, False otherwise
     """
-    first = iterable[0]
-    for item in iterable[1:]:
-        if cmp(first, item) != 0:
-            return False
-    return True
+    try:
+        iterator = iter(iterator)
+        first = next(iterator)
+        return all(first == rest for rest in iterator)
+    except StopIteration:
+        return True
 
 
 def relation_name(attribute_name):

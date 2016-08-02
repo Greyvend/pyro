@@ -1,6 +1,7 @@
 import json
 from unittest import TestCase
 import logging
+from os import path
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
@@ -11,7 +12,8 @@ class DatabaseTestCase(TestCase):
     """TestCase class that clears DB between the tests"""
 
     def __init__(self, *args, **kwargs):
-        with open('config.json') as config_file:
+        config_path = path.abspath(path.join(path.dirname(__file__), '..'))
+        with open(path.join(config_path, 'config.json')) as config_file:
             config = json.load(config_file)
         self.engine = create_engine(URL(**config['test_db']))
         self.config = config

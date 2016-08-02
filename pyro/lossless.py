@@ -1,4 +1,5 @@
 from functools import partial
+from functools import reduce
 from itertools import groupby
 
 from pyro import utils
@@ -22,7 +23,7 @@ def is_clear(row):
     :param row: dictionary representing a tableau row
     :return: True if the row contains all simple values, False otherwise
     """
-    for k, v in row.iteritems():
+    for k, v in row.items():
         if len(v) != 1:
             return False
     return True
@@ -45,16 +46,18 @@ def is_lossless(relations, deps):
         for dep in deps:
             dep_left = partial(project, keys=dep['left'])
             dep_right = partial(project, keys=dep['right'])
-            tableau = sorted(tableau, key=dep_left)
+            tableau = sorted(tableau, key=lambda r: list(dep_left(r).values()))
             for k, group in groupby(tableau, key=dep_left):
                 group = list(group)
-                values_to_change = map(dep_right, group)
+                values_to_change = list(map(dep_right, group))
                 if not all_equal(values_to_change):
                     changed = True
                     group_min = reduce(min_dict, values_to_change)
                     for row in group:
                         row.update(group_min)
-        clear_rows = filter(is_clear, tableau)
-        if clear_rows:
+        try:
+            next(filter(is_clear, tableau))
             return True
+        except StopIteration:
+            pass
     return False

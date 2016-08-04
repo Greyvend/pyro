@@ -128,3 +128,23 @@ class TestIsSubordinate(TestCase):
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None, 'g': 'R_1'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'A_4': 'd', 'g': 'R_2,R_3'})
         )
+
+
+class TestFilterSubordinateRows(TestCase):
+    def test(self):
+        context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
+                   {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
+        base_row_1 = {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'}
+        base_row_2 = {'A_1': 'a', 'A_2': None, 'A_3': None, 'g': 'R_1'}
+        base_row_3 = {'A_1': None, 'A_2': 'b', 'A_3': None, 'g': 'R_1'}
+        tj_data = [base_row_1, base_row_2, base_row_3]
+        new_data = [
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1,R_2'},
+            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': 'R_1,R_2'}]
+
+        rows_to_delete = pyro.tj.filter_subordinate_rows(context, tj_data,
+                                                         new_data)
+
+        self.assertEqual(next(rows_to_delete), base_row_1)
+        self.assertEqual(next(rows_to_delete), base_row_2)
+        self.assertRaises(StopIteration)

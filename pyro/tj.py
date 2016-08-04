@@ -119,6 +119,7 @@ def filter_subordinate_rows(context, tj_data, new_data):
     Filter existing tj_data based on new_data. Return subordinate rows to
     be deleted.
 
+    :param context: context of operation
     :param tj_data: list of rows currently existing in TJ
     :param new_data: list of new rows
     :return: list of rows to delete

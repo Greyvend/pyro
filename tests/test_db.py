@@ -4,7 +4,7 @@ from sqlalchemy.dialects.mysql import REAL
 
 from pyro import db
 from pyro.db import create_table, _transform_column_type, _execute, \
-    get_rows
+    get_rows, delete_rows, insert_rows
 from tests.alchemy import DatabaseTestCase
 
 
@@ -330,3 +330,86 @@ class TestGetRows(DatabaseTestCase):
         second_row = res[1]
         self.assertEqual(second_row['user_name'], 'wendy')
         self.assertEqual(second_row['user_fullname'], 'Wendy Williams')
+
+
+class TestDeleteRows(DatabaseTestCase):
+    def test(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        rows = [
+            {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+            {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'},
+            {'user_name': 'chris', 'user_fullname': 'Chris Kyle'},
+        ]
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), rows)
+
+        delete_rows(self.engine, {'name': users.name,
+                                  'attributes': users.c._data},
+                    rows[:2])
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 1)
+        self.assertEqual(all_records[0]['user_name'], rows[2]['user_name'])
+        self.assertEqual(all_records[0]['user_fullname'],
+                         rows[2]['user_fullname'])
+
+    def test_delete_non_existing(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        rows = [{'user_name': 'jack', 'user_fullname': 'Jack Jones'}]
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), rows)
+
+        delete_rows(self.engine, {'name': users.name,
+                                  'attributes': users.c._data},
+                    [{'user_name': 'non existing',
+                      'user_fullname': 'also does not exist'}])
+
+        # check that row is still there
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 1)
+        self.assertEqual(all_records[0]['user_name'], rows[0]['user_name'])
+        self.assertEqual(all_records[0]['user_fullname'],
+                         rows[0]['user_fullname'])
+
+
+class TestInsertRows(DatabaseTestCase):
+    def test(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        rows = [
+            {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+            {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'},
+            {'user_name': 'chris', 'user_fullname': 'Chris Kyle'},
+        ]
+
+        insert_rows(self.engine, {'name': users.name,
+                                  'attributes': users.c._data},
+                    rows)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 3)
+        usernames = [r['user_name'] for r in all_records]
+        for row in rows:
+            self.assertIn(row['user_name'], usernames)

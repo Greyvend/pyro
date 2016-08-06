@@ -2,8 +2,10 @@ from copy import deepcopy
 from functools import reduce
 
 from sqlalchemy import Column, Table, MetaData, select, column
+from sqlalchemy import delete
+from sqlalchemy import insert
 from sqlalchemy import table
-from sqlalchemy.sql.elements import and_
+from sqlalchemy.sql.elements import and_, or_
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
 from sqlalchemy.exc import InternalError
@@ -115,7 +117,7 @@ def create_table(engine, relation):
             raise
 
 
-def _execute(engine, query):
+def _execute(engine, query, *multiparams, **params):
     """
     Execute SQLAlchemy query and then transform query result object into list
     of dicts representing result rows
@@ -124,9 +126,10 @@ def _execute(engine, query):
     :param query: SQLAlchemy query
     :return: list of dicts, each representing a row in DB
     """
-    conn = engine.connect()
-    result_proxy = conn.execute(query)
-    return [dict(r) for r in result_proxy.fetchall()]
+    with engine.connect() as conn:
+        result_proxy = conn.execute(query, *multiparams, **params)
+        if result_proxy.returns_rows:
+            return [dict(r) for r in result_proxy.fetchall()]
 
 
 def natural_join(engine, relations, attributes):
@@ -158,3 +161,15 @@ def get_rows(engine, relation):
     s = select(columns=map(column, relation['attributes'].keys()),
                from_obj=table(relation['name']))
     return _execute(engine, s)
+
+
+def delete_rows(engine, relation, rows):
+    whereclause = or_(and_(column(k) == row[k] for k in row) for row in rows)
+    del_query = delete(table(relation['name'])).where(whereclause)
+    _execute(engine, del_query)
+
+
+def insert_rows(engine, relation, rows):
+    metadata = MetaData(engine, reflect=True)
+    insert_query = insert(metadata.tables[relation['name']])
+    _execute(engine, insert_query, rows)

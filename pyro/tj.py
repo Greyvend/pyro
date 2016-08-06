@@ -1,9 +1,9 @@
 from sqlalchemy import String
 
 from pyro import db
+from pyro.db import delete_rows, insert_rows
 from pyro.transformation import lossless_combinations
 from pyro.utils import all_attributes, containing_relation
-
 
 VECTOR_ATTRIBUTE = 'g'
 VECTOR_SEPARATOR = ','

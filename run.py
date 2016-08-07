@@ -6,7 +6,7 @@ from sqlalchemy.engine.url import URL
 from pyro import db, tj, transformation
 from pyro.utils import relation_name
 
-# TODO: switch to python 3.5
+
 if __name__ == '__main__':
     with open('config.json') as config_file:
         config = json.load(config_file)

@@ -1,7 +1,6 @@
 from sqlalchemy import String
 
 from pyro import db
-from pyro.db import delete_rows, insert_rows
 from pyro.transformation import lossless_combinations
 from pyro.utils import all_attributes, containing_relation
 
@@ -159,5 +158,5 @@ def build(context, dependencies, source, cube):
                                                           for r in relations)
         tj_data = db.get_rows(cube, tj)
         rows_to_delete = filter_subordinate_rows(context, tj_data, join_data)
-        delete_rows(cube, tj, rows_to_delete)
-        insert_rows(cube, tj, join_data)
+        db.delete_rows(cube, tj, rows_to_delete)
+        db.insert_rows(cube, tj, join_data)

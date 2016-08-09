@@ -15,7 +15,7 @@ class DatabaseTestCase(TestCase):
         config_path = path.abspath(path.join(path.dirname(__file__), '..'))
         with open(path.join(config_path, 'config.json')) as config_file:
             config = json.load(config_file)
-        self.engine = create_engine(URL(**config['test_db']))
+        self.engine = create_engine(URL(**config['test_db']), echo=True)
         self.config = config
         super(DatabaseTestCase, self).__init__(*args, **kwargs)
 

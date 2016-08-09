@@ -333,7 +333,7 @@ class TestGetRows(DatabaseTestCase):
 
 
 class TestDeleteRows(DatabaseTestCase):
-    def test(self):
+    def test_successful(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
                       Column('user_id', Integer, primary_key=True),
@@ -361,7 +361,35 @@ class TestDeleteRows(DatabaseTestCase):
         self.assertEqual(all_records[0]['user_fullname'],
                          rows[2]['user_fullname'])
 
-    def test_delete_non_existing(self):
+    def test_empty(self):
+        """
+        No rows should be removed if `rows` parameter is empty
+        """
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        rows = [{'user_name': 'jack', 'user_fullname': 'Jack Jones'}]
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), rows)
+
+        delete_rows(self.engine, {'name': users.name,
+                                  'attributes': users.c._data},
+                    [])
+
+        # check that row is still there
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 1)
+        self.assertEqual(all_records[0]['user_name'], rows[0]['user_name'])
+        self.assertEqual(all_records[0]['user_fullname'],
+                         rows[0]['user_fullname'])
+
+    def test_non_existing(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
                       Column('user_id', Integer, primary_key=True),
@@ -389,7 +417,29 @@ class TestDeleteRows(DatabaseTestCase):
 
 
 class TestInsertRows(DatabaseTestCase):
-    def test(self):
+    def test_empty(self):
+        """
+        Calling with empty list should result in no rows being inserted
+        :return:
+        """
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        rows = []
+
+        insert_rows(self.engine, {'name': users.name,
+                                  'attributes': users.c._data},
+                    rows)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 0)
+
+    def test_successful(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
                       Column('user_id', Integer, primary_key=True),

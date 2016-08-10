@@ -167,7 +167,7 @@ def delete_rows(engine, relation, rows):
     _rows = list(rows)
     if not _rows:
         return
-    whereclause = or_(and_(column(k) == row[k] for k in row) for row in rows)
+    whereclause = or_(and_(column(k) == row[k] for k in row) for row in _rows)
     del_query = delete(table(relation['name'])).where(whereclause)
     _execute(engine, del_query)
 

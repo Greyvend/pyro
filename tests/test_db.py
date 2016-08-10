@@ -363,7 +363,7 @@ class TestDeleteRows(DatabaseTestCase):
 
     def test_empty(self):
         """
-        No rows should be removed if `rows` parameter is empty
+        No rows should be removed if `rows` is empty iterator
         """
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
@@ -376,6 +376,7 @@ class TestDeleteRows(DatabaseTestCase):
         with self.engine.connect() as conn:
             conn.execute(users.insert(), rows)
 
+        # case 1: test with empty list
         delete_rows(self.engine, {'name': users.name,
                                   'attributes': users.c._data},
                     [])
@@ -385,9 +386,20 @@ class TestDeleteRows(DatabaseTestCase):
             res = conn.execute(users.select())
             all_records = res.fetchall()
         self.assertEqual(len(all_records), 1)
-        self.assertEqual(all_records[0]['user_name'], rows[0]['user_name'])
-        self.assertEqual(all_records[0]['user_fullname'],
-                         rows[0]['user_fullname'])
+
+        # case 2: test with empty generator
+        def rows_gen():
+            if 1 < 0:
+                yield 1
+        delete_rows(self.engine, {'name': users.name,
+                                  'attributes': users.c._data},
+                    rows_gen())
+
+        # check that row is still there
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 1)
 
     def test_non_existing(self):
         metadata = MetaData(self.engine, reflect=True)
@@ -433,6 +445,20 @@ class TestInsertRows(DatabaseTestCase):
         insert_rows(self.engine, {'name': users.name,
                                   'attributes': users.c._data},
                     rows)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 0)
+
+        # case 2: generator expression
+        def rows_gen():
+            if 1 < 0:
+                yield 1
+
+        insert_rows(self.engine, {'name': users.name,
+                                  'attributes': users.c._data},
+                    rows_gen())
 
         with self.engine.connect() as conn:
             res = conn.execute(users.select())

@@ -164,7 +164,8 @@ def get_rows(engine, relation):
 
 
 def delete_rows(engine, relation, rows):
-    if not rows:
+    _rows = list(rows)
+    if not _rows:
         return
     whereclause = or_(and_(column(k) == row[k] for k in row) for row in rows)
     del_query = delete(table(relation['name'])).where(whereclause)
@@ -172,8 +173,9 @@ def delete_rows(engine, relation, rows):
 
 
 def insert_rows(engine, relation, rows):
-    if not rows:
+    _rows = list(rows)
+    if not _rows:
         return
     metadata = MetaData(engine, reflect=True)
     insert_query = insert(metadata.tables[relation['name']])
-    _execute(engine, insert_query, rows)
+    _execute(engine, insert_query, _rows)

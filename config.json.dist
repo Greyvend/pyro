@@ -1,0 +1,17 @@
+{
+    "source_db": {
+        "drivername": "mysql",
+        "host": "localhost",
+        "port": 3306,
+        "database": "",
+        "username": "",
+        "password": ""
+    },
+    "cube_db": {
+        "drivername": "sqlite",
+        "database": "TJ_DB"
+    },
+    "multi valued dependencies": [],
+    "dimensions": [],
+    "measure": ""
+}

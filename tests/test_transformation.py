@@ -79,18 +79,12 @@ class TestPrioritizedRelations(TestCase):
 
         # case 1: no base relations
         relations_to_check, priorities = zip(*prioritized_relations(
-            relations=[r1, r2, r3],
-            base_relations=[],
-            dependencies=[],
-            all_attributes={'A', 'B', 'C', 'D', 'E', 'F'}))
+            relations=[r1, r2, r3], base_relations=[], dependencies=[]))
         self.assertEqual(priorities, (1,) * 3)
 
         # case 2: one base relation
         relations_to_check, priorities = zip(*prioritized_relations(
-            relations=[r2, r3],
-            base_relations=[r1],
-            dependencies=[],
-            all_attributes={'A', 'B', 'C', 'D', 'E', 'F'}))
+            relations=[r2, r3], base_relations=[r1], dependencies=[]))
         self.assertEqual(priorities, (1,) * 2)
 
     def test_high_priority_hit_with_base_relations(self):
@@ -106,10 +100,7 @@ class TestPrioritizedRelations(TestCase):
               'pk': {'E'}}
 
         relations_to_check, priorities = zip(*prioritized_relations(
-            relations=[r2, r3],
-            base_relations=[r1],
-            dependencies=[],
-            all_attributes={'A', 'B', 'C', 'D', 'E', 'F'}))
+            relations=[r2, r3], base_relations=[r1], dependencies=[]))
         self.assertEqual(priorities, (2,) * 2)
 
     def test_highest_priority_hit(self):
@@ -125,13 +116,9 @@ class TestPrioritizedRelations(TestCase):
             {'left': {'D'}, 'right': {'E'}}
         ]
 
-        all_attributes = {'A': 'INT', 'B': 'INT', 'C': 'INT', 'D': 'INT',
-                          'E': 'INT', 'F': 'INT'}
         relations_to_check, priorities = zip(*prioritized_relations(
-            relations=[r1, r2, r3],
-            base_relations=[],
-            dependencies=dependencies,
-            all_attributes=all_attributes))
+            relations=[r1, r2, r3], base_relations=[],
+            dependencies=dependencies))
         self.assertEqual(priorities, (3, 3, 1))
 
     def test_all_priorities_hit(self):
@@ -154,10 +141,8 @@ class TestPrioritizedRelations(TestCase):
         all_attributes = {'A', 'B', 'C', 'D', 'E'}
 
         relations_to_check, priorities = zip(*prioritized_relations(
-            relations=[r1, r2, r3],
-            base_relations=[base],
-            dependencies=dependencies,
-            all_attributes=all_attributes))
+            relations=[r1, r2, r3], base_relations=[base],
+            dependencies=dependencies))
         self.assertEqual(priorities, (3, 2, 1))
 
 

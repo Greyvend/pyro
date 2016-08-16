@@ -2,8 +2,7 @@ import itertools
 from copy import deepcopy
 
 from pyro.lossless import is_lossless
-from pyro import utils
-from pyro.utils import common_keys, all_attributes as all_attr_func
+from pyro.utils import common_keys, all_attributes
 
 
 def closure(attributes, dependencies):
@@ -53,8 +52,7 @@ def existing_join(relations):
             return _relations[:point]
 
 
-def prioritized_relations(relations, base_relations, dependencies,
-                          all_attributes):
+def prioritized_relations(relations, base_relations, dependencies):
     """
     Compute relations priorities and sort `relations` by those priorities in
     descending order. Priorities denote likelihood of the relation to satisfy
@@ -64,16 +62,15 @@ def prioritized_relations(relations, base_relations, dependencies,
     :param base_relations: list of initial relations
     :param dependencies: list of dependencies that are satisfied by all
         relations
-    :param all_attributes: set of all DB attributes
     :return: list of tuples of the following type: (r, N), where r is relations
         element and N is a priority number from set {1, 2, 3}.
     """
     result = []
     for relation in relations:
-        attrs = all_attr_func(base_relations + [relation])
+        attrs = all_attributes(base_relations + [relation])
         if closure(relation['pk'], dependencies).issuperset(attrs):
             result.append((relation, 3))
-        elif set(utils.all_attributes(base_relations)).intersection(
+        elif set(all_attributes(base_relations)).intersection(
                 relation['attributes']):
             result.append((relation, 2))
         else:
@@ -88,7 +85,7 @@ def lossless_combinations(relations, dependencies):
         for combination in combinations:
             def is_dependency_held(dep):
                 attributes = set(dep['left'] | dep['right'])
-                return attributes.issubset(utils.all_attributes(combination))
+                return attributes.issubset(all_attributes(combination))
             satisfied_deps = filter(is_dependency_held, dependencies)
             if is_lossless(combination, satisfied_deps):
                 yield list(combination)
@@ -109,10 +106,7 @@ def contexts(all_relations, base, dependencies):
     relations_to_check = [r for r in all_relations if r['name'] not in base]
 
     relations_to_check, priorities = zip(*prioritized_relations(
-        relations_to_check,
-        base_relations,
-        dependencies,
-        utils.all_attributes(all_relations)))
+        relations_to_check, base_relations, dependencies))
 
     n = len(relations_to_check)
     for k in range(n + 1):
@@ -120,7 +114,7 @@ def contexts(all_relations, base, dependencies):
         for relations in relation_packs:
             context = base_relations + list(relations)
             satisfied_deps = filter(lambda d: set(d['left'] | d['right'])
-                                    .issubset(utils.all_attributes(context)),
+                                    .issubset(all_attributes(context)),
                                     dependencies)
             if is_lossless(context, satisfied_deps):
                 yield context

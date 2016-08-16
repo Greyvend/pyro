@@ -113,32 +113,26 @@ class TestPrioritizedRelations(TestCase):
         self.assertEqual(priorities, (2,) * 2)
 
     def test_highest_priority_hit(self):
-        r1 = {'name': 'R1', 'attributes': {'A', 'B', 'C'}, 'pk': {'A', 'B'}}
-        r2 = {'name': 'R2', 'attributes': {'C', 'D'}, 'pk': {'C'}}
-        r3 = {'name': 'R3', 'attributes': {'D', 'E'}, 'pk': {'D'}}
+        r1 = {'name': 'R1', 'attributes': {'A': 'INT', 'B': 'INT', 'C': 'INT'},
+              'pk': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C': 'INT', 'D': 'INT'},
+              'pk': {'C'}}
+        r3 = {'name': 'R3', 'attributes': {'D': 'INT', 'E': 'INT'},
+              'pk': {'D'}}
         dependencies = [
             {'left': {'A', 'B'}, 'right': {'C'}},
             {'left': {'B', 'C'}, 'right': {'A', 'D'}},
             {'left': {'D'}, 'right': {'E'}}
         ]
 
-        # case 1: excessive attributes
-        all_attributes = {'A', 'B', 'C', 'D', 'E', 'F'}
+        all_attributes = {'A': 'INT', 'B': 'INT', 'C': 'INT', 'D': 'INT',
+                          'E': 'INT', 'F': 'INT'}
         relations_to_check, priorities = zip(*prioritized_relations(
             relations=[r1, r2, r3],
             base_relations=[],
             dependencies=dependencies,
             all_attributes=all_attributes))
-        self.assertEqual(priorities, (1, 1, 1))
-
-        # case 2: closure equals set of all DB attributes
-        all_attributes = {'A', 'B', 'C', 'D', 'E'}
-        relations_to_check, priorities = zip(*prioritized_relations(
-            relations=[r1, r2, r3],
-            base_relations=[],
-            dependencies=dependencies,
-            all_attributes=all_attributes))
-        self.assertEqual(priorities, (3, 1, 1))
+        self.assertEqual(priorities, (3, 3, 1))
 
     def test_all_priorities_hit(self):
         """
@@ -204,9 +198,10 @@ class TestContexts(TestCase):
         deps = [{'left': {'C'}, 'right': {'D'}}]
         contexts_gen = contexts(all_relations=[r1, r2], base=[],
                                 dependencies=deps)
-        self.assertEqual(next(contexts_gen), [r1])
+        # r2 goes first because it gets priority 3 due to dependencies
         self.assertEqual(next(contexts_gen), [r2])
-        self.assertEqual(next(contexts_gen), [r1, r2])
+        self.assertEqual(next(contexts_gen), [r1])
+        self.assertListEqual(next(contexts_gen), [r2, r1])
         self.assertRaises(StopIteration, next, contexts_gen)
 
     def test_with_base_relations(self):

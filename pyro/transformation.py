@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from pyro.lossless import is_lossless
 from pyro import utils
-from pyro.utils import common_keys
+from pyro.utils import common_keys, all_attributes as all_attr_func
 
 
 def closure(attributes, dependencies):
@@ -70,7 +70,8 @@ def prioritized_relations(relations, base_relations, dependencies,
     """
     result = []
     for relation in relations:
-        if closure(relation['pk'], dependencies).issuperset(all_attributes):
+        attrs = all_attr_func(base_relations + [relation])
+        if closure(relation['pk'], dependencies).issuperset(attrs):
             result.append((relation, 3))
         elif set(utils.all_attributes(base_relations)).intersection(
                 relation['attributes']):

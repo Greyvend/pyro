@@ -8,7 +8,6 @@ from sqlalchemy import table
 from sqlalchemy.sql.elements import and_, or_
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
-from sqlalchemy.exc import InternalError
 
 from pyro.utils import containing_relation, common_keys
 
@@ -110,11 +109,9 @@ def create_table(engine, relation):
     cube_metadata = MetaData(engine)
     columns = {Column(name, type) for name, type in
                relation['attributes'].items()}
-    try:
-        Table(relation['name'], cube_metadata, *columns).create(engine)
-    except InternalError as e:
-        if 'already exists' not in e.args[0]:
-            raise
+    t = Table(relation['name'], cube_metadata, *columns)
+    t.drop(checkfirst=True)
+    t.create(engine)
 
 
 def _execute(engine, query, *multiparams, **params):

@@ -59,6 +59,20 @@ class TestCreateTable(DatabaseTestCase):
         metadata.reflect()
         self.assertEqual(len(metadata.tables), 1)
 
+    def test_different_attributes(self):
+        metadata = MetaData(self.engine, reflect=True)
+        relation = {'name': 'test_table', 'attributes': {'first': Integer,
+                                                         'second': String(10)}}
+
+        self.assertEqual(len(metadata.tables), 0)
+
+        create_table(self.engine, relation)
+        relation['attributes'].pop('second')
+        create_table(self.engine, relation)
+
+        metadata.reflect()
+        self.assertEqual(len(metadata.tables), 1)
+
 
 class TestTransformColumnType(DatabaseTestCase):
     def test_handled_types(self):

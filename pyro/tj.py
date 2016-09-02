@@ -2,7 +2,7 @@ from sqlalchemy import String
 
 from pyro import db
 from pyro.transformation import lossless_combinations
-from pyro.utils import all_attributes, containing_relation
+from pyro.utils import containing_relation, common_keys
 
 VECTOR_ATTRIBUTE = 'g'
 VECTOR_SEPARATOR = ','
@@ -106,7 +106,8 @@ def is_less_or_equal(v1, v2):
 def is_subordinate(context, r1, r2):
     if not is_less_or_equal(*map(decode_vector, [r1, r2])):
         return False
-    attributes = all_attributes(context)
+    attributes = common_keys(r1, r2)
+    attributes.remove(VECTOR_ATTRIBUTE)
     for attr in attributes:
         if r1[attr] != r2[attr] and not is_empty_attr(context, r1, attr):
             return False

@@ -64,8 +64,7 @@ class TestIsLessOrEqual(TestCase):
 
 
 class TestIsSubordinate(TestCase):
-    def test_same_relation_set(self):
-        # case 1: single relation in context
+    def test_same_relation_set_one_relation(self):
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}}]
         self.assertTrue(pyro.tj.is_subordinate(
             context,
@@ -84,7 +83,7 @@ class TestIsSubordinate(TestCase):
             {'A_1': 'a', 'A_2': 'b', 'g': 'R_1'},
             {'A_1': 'a', 'A_2': None, 'g': 'R_1'}))
 
-        # case 2: two relations in context
+    def test_same_relation_set_two_relations(self):
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
                    {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
         self.assertTrue(pyro.tj.is_subordinate(
@@ -105,7 +104,6 @@ class TestIsSubordinate(TestCase):
             {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': 'R_1,R_2'}))
 
     def test_different_relation_sets(self):
-        # case 1: different attribute values
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
                    {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
         self.assertFalse(pyro.tj.is_subordinate(
@@ -125,8 +123,8 @@ class TestIsSubordinate(TestCase):
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1,R_2'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'}))
 
-        # case 2: same attribute values but different relation set, which leads
-        # to non subordination
+        # same attribute values but different relation set, which leads to non
+        # subordination
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
                    {'name': 'R_2', 'attributes': {'A_1': 'INT', 'A_3': 'INT'}},
                    {'name': 'R_3', 'attributes': {'A_2': 'INT', 'A_4': 'INT'}}]
@@ -135,6 +133,20 @@ class TestIsSubordinate(TestCase):
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None, 'g': 'R_1'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'A_4': 'd', 'g': 'R_2,R_3'})
         )
+
+    def test_missing_attributes(self):
+        """
+        Check function behavior in case not all attributes are present in
+        each row. This is the case when calling the function with existing join
+        data and new rows that don't have all the attributes set.
+        """
+        context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
+                   {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}},
+                   {'name': 'R_3', 'attributes': {'A_3': 'INT', 'A_4': 'INT'}}]
+        self.assertTrue(pyro.tj.is_subordinate(
+            context,
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None, 'g': 'R_1'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'}))
 
 
 class TestFilterSubordinateRows(TestCase):

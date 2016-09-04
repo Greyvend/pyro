@@ -255,3 +255,48 @@ class TestBuild(DatabaseTestCase):
         self.assertEqual(all_records[2]['C'], 3)
         self.assertEqual(all_records[2]['D'], 4)
         self.assertEqual(all_records[2]['g'], 'R1,R2')
+
+    def test_pseudocontext(self):
+        """
+        Check that in case with pseudocontexts the whole relation set is used
+        to construct TJ
+        """
+        r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
+                                           'C': Integer},
+              'pk': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
+              'pk': {'C'}}
+        dependencies = []
+        source = self.engine
+        cube = create_engine('sqlite://')  # additional in-memory DB for test
+        metadata = MetaData(source, reflect=True)
+        t1 = Table('R1', metadata,
+                   Column('A', Integer, primary_key=True),
+                   Column('B', Integer, primary_key=True),
+                   Column('C', Integer))
+        t2 = Table('R2', metadata,
+                   Column('C', Integer, primary_key=True),
+                   Column('D', Integer))
+        metadata.create_all()
+        # populate with data
+        with source.connect() as conn:
+            conn.execute(t1.insert(), [
+                {'A': 1, 'B': 2, 'C': 3},
+                {'A': 1, 'B': 22, 'C': None}
+            ])
+            conn.execute(t2.insert(), [
+                {'C': 3, 'D': 4},
+                {'C': 33, 'D': 44}
+            ])
+
+        pyro.tj.build([r1, r2], dependencies, source, cube)
+
+        metadata = MetaData(cube, reflect=True)
+        self.assertEqual(len(metadata.tables.keys()), 1)
+        self.assertIn('TJ_R1_R2', metadata.tables)
+        with cube.connect() as conn:
+            tj = metadata.tables['TJ_R1_R2'].select()
+            res = conn.execute(tj)
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 3)
+        self.assertIn('R1,R2', map(lambda r: r['g'], all_records))

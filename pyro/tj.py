@@ -149,8 +149,10 @@ def build(context, dependencies, source, cube):
     db.create_table(cube, tj)
 
     # fill TJ with data
-    relations_gen = lossless_combinations(context, dependencies)
-    for relations in relations_gen:
+    relations_packs = list(lossless_combinations(context, dependencies))
+    if context not in relations_packs:
+        relations_packs.append(context)
+    for relations in relations_packs:
         # Execute JOIN of required source db tables
         join_data = db.natural_join(source, relations, attributes)
         # not using functional approach here to avoid data copying

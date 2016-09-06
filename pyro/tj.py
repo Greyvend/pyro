@@ -140,7 +140,7 @@ def build(context, dependencies, source, cube):
     :param cube: SQLAlchemy engine for cube DB
     """
     # create TJ in destination DB
-    tj_name = 'TJ_' + '_'.join(r['name'] for r in context)
+    tj_name = 'TJ_' + '_'.join(sorted(r['name'] for r in context))
     attributes = get_attributes(context, dependencies)
     # add vector attribute holding information about participating relations
     full_schema = attributes.copy()

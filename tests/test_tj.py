@@ -170,6 +170,36 @@ class TestFilterSubordinateRows(TestCase):
 
 
 class TestBuild(DatabaseTestCase):
+    def test_relations_order(self):
+        """
+        Context should be treated in the same way regardless of its relations
+        order
+        """
+        r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
+                                           'C': Integer},
+              'pk': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
+              'pk': {'C'}}
+        dependencies = []
+        source = self.engine
+        cube = create_engine('sqlite://')  # additional in-memory DB for test
+        metadata = MetaData(source, reflect=True)
+        Table('R1', metadata,
+              Column('A', Integer, primary_key=True),
+              Column('B', Integer, primary_key=True),
+              Column('C', Integer))
+        Table('R2', metadata,
+              Column('C', Integer, primary_key=True),
+              Column('D', Integer))
+        metadata.create_all()
+
+        pyro.tj.build([r1, r2], dependencies, source, cube)
+        pyro.tj.build([r2, r1], dependencies, source, cube)
+
+        metadata = MetaData(cube, reflect=True)
+        self.assertEqual(len(metadata.tables.keys()), 1)
+        self.assertIn('TJ_R1_R2', metadata.tables)
+
     def test_integration_empty_tables(self):
         r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
                                            'C': Integer},

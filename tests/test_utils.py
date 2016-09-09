@@ -1,6 +1,7 @@
 from unittest import TestCase
 
-from pyro.utils import containing_relation, min_dict, all_equal, all_attributes
+from pyro.utils import containing_relation, min_dict, all_equal, all_attributes, \
+    chunks
 
 
 class TestAllAttributes(TestCase):
@@ -115,3 +116,40 @@ class TestAllEqual(TestCase):
         """
         values = [{'key': 'value'}, {'key': 'another_value'}]
         self.assertFalse(all_equal(values))
+
+
+class TestChunks(TestCase):
+    def test_divisible(self):
+        """
+        Check behavior when whole list is factored by chunks
+        """
+        l = range(30)
+        n = 15
+        _chunks = chunks(l, n)
+        self.assertEqual(next(_chunks), range(15))
+        self.assertEqual(next(_chunks), range(15, 30))
+        self.assertRaises(StopIteration, next, _chunks)
+
+    def test_non_divisible(self):
+        """
+        Check behavior when whole list can't be factored by chunks
+        """
+        l = range(31)
+        n = 15
+        _chunks = chunks(l, n)
+        self.assertEqual(next(_chunks), range(15))
+        self.assertEqual(next(_chunks), range(15, 30))
+        self.assertEqual(next(_chunks), range(30, 31))
+        self.assertRaises(StopIteration, next, _chunks)
+
+    def test_with_list(self):
+        """
+        Check functionality with list object
+        """
+        l = ['a', 'b', 'c', 'd', 'e']
+        n = 2
+        _chunks = chunks(l, n)
+        self.assertEqual(next(_chunks), ['a', 'b'])
+        self.assertEqual(next(_chunks), ['c', 'd'])
+        self.assertEqual(next(_chunks), ['e'])
+        self.assertRaises(StopIteration, next, _chunks)

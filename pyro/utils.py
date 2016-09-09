@@ -82,3 +82,9 @@ def relation_name(attribute_name):
     :return: string representing relation name ('Relation_name')
     """
     return attribute_name.split('.')[0]
+
+
+def chunks(l, n):
+    """Yield successive n-sized chunks from l."""
+    for i in range(0, len(l), n):
+        yield l[i:i + n]

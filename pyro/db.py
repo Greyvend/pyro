@@ -9,7 +9,9 @@ from sqlalchemy.sql.elements import and_, or_
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
 
-from pyro.utils import containing_relation, common_keys
+from pyro.utils import containing_relation, common_keys, chunks
+# noinspection PyUnresolvedReferences
+from pyro import compilers
 
 
 def _transform_column_type(column_type):
@@ -164,9 +166,12 @@ def delete_rows(engine, relation, rows):
     _rows = list(rows)
     if not _rows:
         return
-    whereclause = or_(and_(column(k) == row[k] for k in row) for row in _rows)
-    del_query = delete(table(relation['name'])).where(whereclause)
-    _execute(engine, del_query)
+    row_chunks = list(chunks(_rows, 200))
+    for chunk in row_chunks:
+        whereclause = or_(and_(column(k) == row[k] for k in row)
+                          for row in chunk)
+        del_query = delete(table(relation['name'])).where(whereclause)
+        _execute(engine, del_query)
 
 
 def insert_rows(engine, relation, rows):

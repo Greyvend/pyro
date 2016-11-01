@@ -1,6 +1,6 @@
 {
     "source_db": {
-        "drivername": "mysql",
+        "drivername": "mysql+pymysql",
         "host": "localhost",
         "port": 3306,
         "database": "",
@@ -13,5 +13,10 @@
     },
     "multi valued dependencies": [],
     "dimensions": [],
-    "measure": ""
+    "measure": "",
+    "app_context_llj": false,
+    "cube_db": {
+        "drivername": "mysql+pymysql",
+        "database": "test_pyro"
+    }
 }

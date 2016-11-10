@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 
 from pyro import db, tj, transformation
-from pyro.utils import relation_name
+from pyro.utils import relation_name, assemble_list
 
 
 logging.basicConfig(level=logging.INFO)
@@ -49,15 +49,21 @@ if __name__ == '__main__':
         contexts.append(context)
 
     # build application context
-    logging.info('Building application context')
-    try:
-        app_context = next(transformation.contexts(relations, base_total,
-                                                   dependencies))
-    except StopIteration:
-        # no combination satisfies Lossless Join property. Pick all relations
-        logging.warning('No lossless combinations were found, picking whole '
-                        'relation set for application application context')
-        app_context = relations
+    if config['app_context']:
+        logging.info('Building application context')
+        try:
+            app_context = next(transformation.contexts(relations, base_total,
+                                                       dependencies))
+        except StopIteration:
+            # no combination satisfies Lossless Join property. Pick all
+            # relations
+            logging.warning('No lossless combinations were found, picking '
+                            'whole relation set for application application '
+                            'context')
+            app_context = relations
+    else:
+        logging.info('Combining all the contexts to form application context')
+        app_context = assemble_list(contexts, key=lambda r: r['name'])
     contexts.append(app_context)
 
     # connect to the output DB

@@ -14,7 +14,7 @@
     "multi valued dependencies": [],
     "dimensions": [],
     "measure": "",
-    "app_context_llj": false,
+    "app_context": false,
     "cube_db": {
         "drivername": "mysql+pymysql",
         "database": "test_pyro"

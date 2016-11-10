@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from pyro.utils import containing_relation, min_dict, all_equal, all_attributes, \
-    chunks
+from pyro.utils import containing_relation, min_dict, all_equal, \
+    all_attributes, chunks, assemble_list
 
 
 class TestAllAttributes(TestCase):
@@ -153,3 +153,49 @@ class TestChunks(TestCase):
         self.assertEqual(next(_chunks), ['c', 'd'])
         self.assertEqual(next(_chunks), ['e'])
         self.assertRaises(StopIteration, next, _chunks)
+
+
+class TestAssembleList(TestCase):
+    def test_mixed(self):
+        """
+        Check behavior when lists share common list elements
+        """
+        l = [[{'name': 'R1'}, {'name': 'R2'}, {'name': 'R3'}],
+             [{'name': 'R2'}, {'name': 'R4'}, {'name': 'R5'}]]
+
+        new_list = assemble_list(l, key=lambda r: r['name'])
+
+        self.assertEqual(len(new_list), 5)
+        self.assertEqual(new_list[0], {'name': 'R1'})
+        self.assertEqual(new_list[1], {'name': 'R2'})
+        self.assertEqual(new_list[2], {'name': 'R3'})
+        self.assertEqual(new_list[3], {'name': 'R4'})
+        self.assertEqual(new_list[4], {'name': 'R5'})
+
+    def test_different(self):
+        """
+        Check behavior when each list has different items in sublist
+        """
+        l = [[{'name': 'R1'}, {'name': 'R2'}, {'name': 'R3'}],
+             [{'name': 'R4'}, {'name': 'R5'}]]
+
+        new_list = assemble_list(l, key=lambda r: r['name'])
+
+        self.assertEqual(len(new_list), 5)
+        self.assertEqual(new_list[0], {'name': 'R1'})
+        self.assertEqual(new_list[1], {'name': 'R2'})
+        self.assertEqual(new_list[2], {'name': 'R3'})
+        self.assertEqual(new_list[3], {'name': 'R4'})
+        self.assertEqual(new_list[4], {'name': 'R5'})
+
+    def test_empty(self):
+        """
+        Check behavior when one of the lists is empty
+        """
+        l = [[], [{'name': 'R4'}, {'name': 'R5'}]]
+
+        new_list = assemble_list(l, key=lambda r: r['name'])
+
+        self.assertEqual(len(new_list), 2)
+        self.assertEqual(new_list[0], {'name': 'R4'})
+        self.assertEqual(new_list[1], {'name': 'R5'})

@@ -12,7 +12,6 @@ def all_attributes(relations):
 
 
 def containing_relation(relations, attribute_name):
-    # type: (list, str) -> dict
     """
     Find relation among provided that contains specified attribute.
 
@@ -88,3 +87,20 @@ def chunks(l, n):
     """Yield successive n-sized chunks from l."""
     for i in range(0, len(l), n):
         yield l[i:i + n]
+
+
+def assemble_list(l, key=lambda x: x):
+    """
+    Create a list of elements from list `l` of lists of elements, removing
+    duplicates based on `key` function.
+
+    :param l: iterable of other iterables containing elements to assemble
+    :param key: function to apply in order to compare elements
+    """
+    res = []
+    for sublist in l:
+        for elem in sublist:
+            # if key(elem) not in list(map(key, res)):
+            if key(elem) not in map(key, res):
+                res.append(elem)
+    return res

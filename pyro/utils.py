@@ -100,7 +100,6 @@ def assemble_list(l, key=lambda x: x):
     res = []
     for sublist in l:
         for elem in sublist:
-            # if key(elem) not in list(map(key, res)):
             if key(elem) not in map(key, res):
                 res.append(elem)
     return res

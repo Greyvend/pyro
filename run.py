@@ -18,7 +18,8 @@ if __name__ == '__main__':
     # connect to source Database
     logging.info('Connecting to the source DB: {}'.format(
         config['source_db']['database']))
-    source_engine = create_engine(URL(**config['source_db']))
+    source_engine = create_engine(str(URL(**config['source_db'])) +
+                                  '?charset=utf8')
 
     relations, dependencies = db.get_schema(source_engine)
 

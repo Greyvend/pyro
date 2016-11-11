@@ -9,3 +9,8 @@ from sqlalchemy.dialects import mysql
 @compiles(mysql.YEAR, 'sqlite')
 def compile_sqlite_tinyint(type_, compiler, **kw):
     return 'INTEGER'
+
+
+@compiles(mysql.DOUBLE, 'sqlite')
+def compile_sqlite_tinyint(type_, compiler, **kw):
+    return 'REAL'

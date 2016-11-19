@@ -91,10 +91,7 @@ class TestTransformColumnType(DatabaseTestCase):
         self.assertEqual(transformed_type.encoding, 'utf-8')
 
 
-class Test_execute(DatabaseTestCase):
-    """
-    Weird bug: test hangs with Python 3 if the class name contains capital 'E'.
-    """
+class TestExecute(DatabaseTestCase):
     def test_single_row_result(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,

@@ -130,6 +130,10 @@ def filter_subordinate_rows(context, tj_data, new_data):
                 yield tj_row
 
 
+def compose_tj_name(context):
+    return 'TJ_' + '_'.join(sorted(r['name'] for r in context))
+
+
 def build(context, dependencies, source, cube):
     """
     Build Table of Joins and write it to the destination DB
@@ -140,7 +144,7 @@ def build(context, dependencies, source, cube):
     :param cube: SQLAlchemy engine for cube DB
     """
     # create TJ in destination DB
-    tj_name = 'TJ_' + '_'.join(sorted(r['name'] for r in context))
+    tj_name = compose_tj_name(context)
     attributes = get_attributes(context, dependencies)
     # add vector attribute holding information about participating relations
     full_schema = attributes.copy()

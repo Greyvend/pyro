@@ -534,6 +534,36 @@ class TestCountAttributes(DatabaseTestCase):
         self.assertEqual(len(counts), 1)
         self.assertEqual(counts[0], 3)
 
+    def test_single_attribute_dict_form(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack1990', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack113', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Christoper'},
+                {'user_name': 'wendy<3', 'user_fullname': 'Wendy Williams'},
+            ])
+
+        counts = db.count_attributes(self.engine,
+                                     {'name': 'users',
+                                      'attributes': {'user_id': Integer,
+                                                     'user_name': String,
+                                                     'user_fullname': String}},
+                                     {'user_fullname': 'STRING'})
+
+        self.assertEqual(len(counts), 1)
+        self.assertEqual(counts[0], 3)
+
     def test_several_attributes(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,

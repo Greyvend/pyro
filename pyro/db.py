@@ -191,11 +191,15 @@ def count_attributes(engine, relation, attributes):
 
     :param engine: SQLAlchemy engine to be used
     :param relation: relation to scan
-    :param attributes: list of attributes or their names in the relation
+    :param attributes: list of attribute names or dictionary of name -> types
 
     :return: list of amounts, in the same order as input attributes
     """
-    columns = map(column, attributes)
+    try:
+        attr_names = attributes.keys()
+    except AttributeError:
+        attr_names = attributes
+    columns = map(column, attr_names)
     distinct_columns = map(distinct, columns)
     count_distinct_columns = map(count, distinct_columns)
     s = select(columns=count_distinct_columns,

@@ -3,9 +3,11 @@ from functools import reduce
 
 from sqlalchemy import Column, Table, MetaData, select, column
 from sqlalchemy import delete
+from sqlalchemy import distinct
 from sqlalchemy import insert
 from sqlalchemy import table
 from sqlalchemy.sql.elements import and_, or_
+from sqlalchemy.sql.functions import count
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
 
@@ -181,3 +183,23 @@ def insert_rows(engine, relation, rows):
     metadata = MetaData(engine, reflect=True)
     insert_query = insert(metadata.tables[relation['name']])
     _execute(engine, insert_query, _rows)
+
+
+def count_attributes(engine, relation, attributes):
+    """
+    Count amount of distinct values of attributes in the table
+
+    :param engine: SQLAlchemy engine to be used
+    :param relation: relation to scan
+    :param attributes: list of attributes or their names in the relation
+
+    :return: list of amounts, in the same order as input attributes
+    """
+    columns = map(column, attributes)
+    distinct_columns = map(distinct, columns)
+    count_distinct_columns = map(count, distinct_columns)
+    s = select(columns=count_distinct_columns,
+               from_obj=table(relation['name']))
+    counts_dict = _execute(engine, s)[0]
+    keys = ['count_{}'.format(i + 1) for i in range(len(attributes))]
+    return [counts_dict[k] for k in keys]

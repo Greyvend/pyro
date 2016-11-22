@@ -1,4 +1,5 @@
 from sqlalchemy import MetaData, Integer, String, Column, Table, ForeignKey
+from sqlalchemy.exc import InternalError
 from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
 from sqlalchemy.dialects.mysql import REAL
 
@@ -500,3 +501,103 @@ class TestInsertRows(DatabaseTestCase):
         usernames = [r['user_name'] for r in all_records]
         for row in rows:
             self.assertIn(row['user_name'], usernames)
+
+
+class TestCountAttributes(DatabaseTestCase):
+    def test_single_attribute(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack1990', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack113', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Christoper'},
+                {'user_name': 'wendy<3', 'user_fullname': 'Wendy Williams'},
+            ])
+
+        counts = db.count_attributes(self.engine,
+                                     {'name': 'users',
+                                      'attributes': {'user_id': Integer,
+                                                     'user_name': String,
+                                                     'user_fullname': String}},
+                                     ['user_fullname'])
+
+        self.assertEqual(len(counts), 1)
+        self.assertEqual(counts[0], 3)
+
+    def test_several_attributes(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)),
+                      Column('user_gender', String(1)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones',
+                 'user_gender': 'm'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones',
+                 'user_gender': 'm'},
+                {'user_name': 'jack1990', 'user_fullname': 'Jack Jones',
+                 'user_gender': None},
+                {'user_name': 'jack113', 'user_fullname': 'Jack Jones',
+                 'user_gender': 'm'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Adams',
+                 'user_gender': 'f'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Christoper',
+                 'user_gender': 'f'},
+                {'user_name': 'wendy<3', 'user_fullname': 'Wendy Williams',
+                 'user_gender': 'f'},
+            ])
+
+        counts = db.count_attributes(self.engine,
+                                     {'name': 'users',
+                                      'attributes': {'user_id': Integer,
+                                                     'user_name': String,
+                                                     'user_fullname': String}},
+                                     ['user_fullname', 'user_gender'])
+
+        self.assertEqual(len(counts), 2)
+        self.assertEqual(counts[0], 4)
+        self.assertEqual(counts[1], 2)  # `None` isn't counted
+
+        # reverse the order
+        counts = db.count_attributes(self.engine,
+                                     {'name': 'users',
+                                      'attributes': {'user_id': Integer,
+                                                     'user_name': String,
+                                                     'user_fullname': String}},
+                                     ['user_gender', 'user_fullname'])
+
+        self.assertEqual(len(counts), 2)
+        self.assertEqual(counts[0], 2)  # `None` isn't counted
+        self.assertEqual(counts[1], 4)
+
+    def test_missing_attributes(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)),
+                      Column('user_gender', String(1)))
+        metadata.create_all()
+
+        self.assertRaises(InternalError, db.count_attributes,
+                          self.engine,
+                          {'name': 'users',
+                           'attributes': {'user_id': Integer,
+                                          'user_name': String,
+                                          'user_fullname': String}},
+                          ['this attribute is not there'])

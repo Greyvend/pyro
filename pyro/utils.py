@@ -73,14 +73,24 @@ def all_equal(iterator):
         return True
 
 
-def relation_name(attribute_name):
+def relation_name(ext_attribute_name):
     """
     Extract relation name from extended attribute name
 
-    :param attribute_name: string in a form 'Relation_name.Attribute_name'
+    :param ext_attribute_name: string in a form 'Relation_name.Attribute_name'
     :return: string representing relation name ('Relation_name')
     """
-    return attribute_name.split('.')[0]
+    return ext_attribute_name.split('.')[0]
+
+
+def attribute_name(ext_attribute_name):
+    """
+    Extract attribute from extended attribute name
+
+    :param ext_attribute_name: string in a form 'Relation_name.Attribute_name'
+    :return: string representing attribute ('Attribute_name')
+    """
+    return ext_attribute_name.split('.')[1]
 
 
 def chunks(l, n):

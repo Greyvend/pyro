@@ -524,12 +524,7 @@ class TestCountAttributes(DatabaseTestCase):
                 {'user_name': 'wendy<3', 'user_fullname': 'Wendy Williams'},
             ])
 
-        counts = db.count_attributes(self.engine,
-                                     {'name': 'users',
-                                      'attributes': {'user_id': Integer,
-                                                     'user_name': String,
-                                                     'user_fullname': String}},
-                                     ['user_fullname'])
+        counts = db.count_attributes(self.engine, 'users', ['user_fullname'])
 
         self.assertEqual(len(counts), 1)
         self.assertEqual(counts[0], 3)
@@ -554,11 +549,7 @@ class TestCountAttributes(DatabaseTestCase):
                 {'user_name': 'wendy<3', 'user_fullname': 'Wendy Williams'},
             ])
 
-        counts = db.count_attributes(self.engine,
-                                     {'name': 'users',
-                                      'attributes': {'user_id': Integer,
-                                                     'user_name': String,
-                                                     'user_fullname': String}},
+        counts = db.count_attributes(self.engine, 'users',
                                      {'user_fullname': 'STRING'})
 
         self.assertEqual(len(counts), 1)
@@ -592,11 +583,7 @@ class TestCountAttributes(DatabaseTestCase):
                  'user_gender': 'f'},
             ])
 
-        counts = db.count_attributes(self.engine,
-                                     {'name': 'users',
-                                      'attributes': {'user_id': Integer,
-                                                     'user_name': String,
-                                                     'user_fullname': String}},
+        counts = db.count_attributes(self.engine, 'users',
                                      ['user_fullname', 'user_gender'])
 
         self.assertEqual(len(counts), 2)
@@ -604,11 +591,7 @@ class TestCountAttributes(DatabaseTestCase):
         self.assertEqual(counts[1], 2)  # `None` isn't counted
 
         # reverse the order
-        counts = db.count_attributes(self.engine,
-                                     {'name': 'users',
-                                      'attributes': {'user_id': Integer,
-                                                     'user_name': String,
-                                                     'user_fullname': String}},
+        counts = db.count_attributes(self.engine, 'users',
                                      ['user_gender', 'user_fullname'])
 
         self.assertEqual(len(counts), 2)
@@ -625,9 +608,5 @@ class TestCountAttributes(DatabaseTestCase):
         metadata.create_all()
 
         self.assertRaises(InternalError, db.count_attributes,
-                          self.engine,
-                          {'name': 'users',
-                           'attributes': {'user_id': Integer,
-                                          'user_name': String,
-                                          'user_fullname': String}},
+                          self.engine, 'users',
                           ['this attribute is not there'])

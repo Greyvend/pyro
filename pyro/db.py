@@ -185,12 +185,12 @@ def insert_rows(engine, relation, rows):
     _execute(engine, insert_query, _rows)
 
 
-def count_attributes(engine, relation, attributes):
+def count_attributes(engine, relation_name, attributes):
     """
     Count amount of distinct values of attributes in the table
 
     :param engine: SQLAlchemy engine to be used
-    :param relation: relation to scan
+    :param relation_name: relation to scan
     :param attributes: list of attribute names or dictionary of name -> types
 
     :return: list of amounts, in the same order as input attributes
@@ -202,8 +202,7 @@ def count_attributes(engine, relation, attributes):
     columns = map(column, attr_names)
     distinct_columns = map(distinct, columns)
     count_distinct_columns = map(count, distinct_columns)
-    s = select(columns=count_distinct_columns,
-               from_obj=table(relation['name']))
+    s = select(columns=count_distinct_columns, from_obj=table(relation_name))
     counts_dict = _execute(engine, s)[0]
     keys = ['count_{}'.format(i + 1) for i in range(len(attributes))]
     return [counts_dict[k] for k in keys]

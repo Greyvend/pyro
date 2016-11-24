@@ -617,11 +617,11 @@ class TestCountAttributes(DatabaseTestCase):
 
     def test_missing_attributes(self):
         metadata = MetaData(self.engine, reflect=True)
-        users = Table('users', metadata,
-                      Column('user_id', Integer, primary_key=True),
-                      Column('user_name', String(20)),
-                      Column('user_fullname', String(50)),
-                      Column('user_gender', String(1)))
+        Table('users', metadata,
+              Column('user_id', Integer, primary_key=True),
+              Column('user_name', String(20)),
+              Column('user_fullname', String(50)),
+              Column('user_gender', String(1)))
         metadata.create_all()
 
         self.assertRaises(InternalError, db.count_attributes,

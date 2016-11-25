@@ -204,5 +204,6 @@ def count_attributes(engine, relation_name, attributes):
     count_distinct_columns = map(count, distinct_columns)
     s = select(columns=count_distinct_columns, from_obj=table(relation_name))
     counts_dict = _execute(engine, s)[0]
-    keys = ['count_{}'.format(i + 1) for i in range(len(attributes))]
+    # noinspection PyTypeChecker
+    keys = ['count_{}'.format(i + 1) for i in range(len(counts_dict.keys()))]
     return [counts_dict[k] for k in keys]

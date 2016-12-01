@@ -211,13 +211,14 @@ def count_attributes(engine, relation_name, attributes):
 
 def project(engine, relation_name, attributes):
     """
-    Count amount of distinct values of attributes in the table
+    Calculates relation projection on the attributes of the hierarchy, ordering
+    result by all the attributes in hierarchy, in order they are presented
 
     :param engine: SQLAlchemy engine to be used
     :param relation_name: relation to scan
     :param attributes: list of attribute names or dictionary of name -> types
 
-    :return: list of amounts, in the same order as input attributes
+    :return: list of rows, each row is a dict of attr_name -> value pairs
     """
     try:
         attr_names = attributes.keys()

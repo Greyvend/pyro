@@ -610,3 +610,101 @@ class TestCountAttributes(DatabaseTestCase):
         self.assertRaises(InternalError, db.count_attributes,
                           self.engine, 'users',
                           ['this attribute is not there'])
+
+
+class TestProject(DatabaseTestCase):
+    def test_single_attribute(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy<3', 'user_fullname': 'Wendy Williams'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Christoper'},
+            ])
+
+        projection = db.project(self.engine, 'users', ['user_name'])
+
+        self.assertEqual(len(projection), 4)
+        self.assertEqual(projection[0], {'user_name': 'jack'})
+        self.assertEqual(projection[1], {'user_name': 'jack19'})
+        self.assertEqual(projection[2], {'user_name': 'wendy3'})
+        self.assertEqual(projection[3], {'user_name': 'wendy<3'})
+
+        projection = db.project(self.engine, 'users', ['user_fullname'])
+
+        self.assertEqual(len(projection), 4)
+        self.assertEqual(projection[0], {'user_fullname': 'Jack Jones'})
+        self.assertEqual(projection[1], {'user_fullname': 'Jack Jones'})
+        self.assertEqual(projection[2], {'user_fullname': 'Wendy Christoper'})
+        self.assertEqual(projection[3], {'user_fullname': 'Wendy Williams'})
+
+    def test_multiple_attributes(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Williams'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Christoper'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Bones'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Cruz'},
+            ])
+
+        projection = db.project(self.engine, 'users', ['user_fullname',
+                                                       'user_name'])
+
+        self.assertEqual(len(projection), 5)
+        self.assertEqual(projection[0], {'user_name': 'jack19',
+                                         'user_fullname': 'Jack Bones'})
+        self.assertEqual(projection[1], {'user_name': 'jack19',
+                                         'user_fullname': 'Jack Jones'})
+        self.assertEqual(projection[2], {'user_fullname': 'Wendy Christoper',
+                                         'user_name': 'wendy3'})
+        self.assertEqual(projection[3], {'user_name': 'wendy3',
+                                         'user_fullname': 'Wendy Cruz'})
+        self.assertEqual(projection[4], {'user_fullname': 'Wendy Williams',
+                                         'user_name': 'wendy3'})
+
+    def test_with_nulls(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': None, 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy3', 'user_fullname': 'Wendy Williams'},
+                {'user_name': None, 'user_fullname': 'Wendy Williams'},
+                {'user_name': 'wendy3', 'user_fullname': None},
+            ])
+
+        projection = db.project(self.engine, 'users', ['user_name',
+                                                       'user_fullname'])
+
+        self.assertEqual(len(projection), 4)
+        self.assertEqual(projection[0], {'user_name': None,
+                                         'user_fullname': 'Jack Jones'})
+        self.assertEqual(projection[1], {'user_name': None,
+                                         'user_fullname': 'Wendy Williams'})
+        self.assertEqual(projection[2], {'user_name': 'wendy3',
+                                         'user_fullname': None})
+        self.assertEqual(projection[3], {'user_name': 'wendy3',
+                                         'user_fullname': 'Wendy Williams'})

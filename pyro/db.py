@@ -207,3 +207,24 @@ def count_attributes(engine, relation_name, attributes):
     # noinspection PyTypeChecker
     keys = ['count_{}'.format(i + 1) for i in range(len(counts_dict.keys()))]
     return [counts_dict[k] for k in keys]
+
+
+def project(engine, relation_name, attributes):
+    """
+    Count amount of distinct values of attributes in the table
+
+    :param engine: SQLAlchemy engine to be used
+    :param relation_name: relation to scan
+    :param attributes: list of attribute names or dictionary of name -> types
+
+    :return: list of amounts, in the same order as input attributes
+    """
+    try:
+        attr_names = attributes.keys()
+    except AttributeError:
+        attr_names = attributes
+    columns = list(map(column, attr_names))
+    s = select(columns=columns, from_obj=table(relation_name),
+               order_by=columns)
+    res = _execute(engine, s)
+    return res

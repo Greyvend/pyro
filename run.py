@@ -5,7 +5,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 
 from pyro import db, tj, transformation
-from pyro.utils import relation_name, assemble_list
+from pyro import representation
+from pyro.utils import relation_name, assemble_list, attribute_name
 
 
 logging.basicConfig(level=logging.INFO)
@@ -31,13 +32,14 @@ if __name__ == '__main__':
     dependencies.extend(mvd)
 
     # get measure
-    measure = config['measure']
+    measure_relation = relation_name(config['measure'])
+    measure_attribute = attribute_name(config['measure'])
 
     # Start transformation
     # build contexts
     logging.info('Building dimension contexts...')
     contexts = []
-    base_total = {relation_name(measure)}
+    base_total = {measure_relation}
     # build dimension contexts
     for dimension in config['dimensions']:
         logging.info('Building context for dimension "{}"'.format(
@@ -79,3 +81,9 @@ if __name__ == '__main__':
 
     logging.info('The source Database has been successfully transformed to '
                  'OLAP representation!')
+
+    logging.info('Writing the result table to the file')
+    dimensions = [list(map(attribute_name, d['attributes']))
+                  for d in config['dimensions']]
+    representation.create(cube_engine, contexts, dimensions,
+                          measure_attribute, config['output_file'])

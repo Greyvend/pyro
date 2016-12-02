@@ -1,22 +1,21 @@
 from pyro import db
 from pyro.tj import compose_tj_name
-from pyro.utils import attribute_name
 
 
-def _get_hierarchy(engine, relation_name, dimension):
+def _get_hierarchy(engine, relation_name, attributes):
     """
     Calculate list of attribute names in the order they should appear in the
     table.
 
     :param engine: SQLAlchemy engine to be used
     :param relation_name: name of relation to get hierarchy from
-    :param dimension: configuration value of user defined dimension
+    :param attributes: attributes to order in hierarchy
 
     :return: list of attribute names in correct order. First attribute to be
     used as top level in hierarchy, the last one is bottom level
     """
     # Count amount of different values in each of attributes
-    attributes = list(map(attribute_name, dimension['attributes']))
+    # attributes = list(map(attribute_name, attributes['attributes']))
     counts = db.count_attributes(engine, relation_name, attributes)
     counted_attributes = zip(counts, attributes)
     sorted_attributes = sorted(counted_attributes)
@@ -29,8 +28,8 @@ def _build(engine, contexts, dimensions, measure):
 
     :param engine: SQLAlchemy engine to be used
     :param contexts: list of contexts (lists of relations)
-    :param dimensions: configuration value of user defined dimensions
-    :type dimensions: list of strings
+    :param dimensions: user defined dimensions
+    :type dimensions: list of lists of strings
     :param measure: name of the attribute to populate table body with
     :type measure: str
 

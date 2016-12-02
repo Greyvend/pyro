@@ -152,7 +152,8 @@ def natural_join(engine, relations, attributes):
     return _execute(engine, s)
 
 
-def get_data(engine, relation_name, attributes, constraint=None):
+def get_data(engine, relation_name, attributes, constraint=None,
+             order_by=None):
     """
     Core module function.
 
@@ -163,13 +164,14 @@ def get_data(engine, relation_name, attributes, constraint=None):
     :param relation_name: relation to scan
     :param attributes: list of attribute names or dictionary of name -> types
     :param constraint: logical constraint
+    :param order_by: list of attribute names to order result by
     """
     if constraint:
         whereclause = and_(column(k) == v for k, v in constraint.items())
     else:
         whereclause = None
     s = select(columns=map(column, attributes), from_obj=table(relation_name),
-               whereclause=whereclause)
+               whereclause=whereclause, order_by=order_by)
     return _execute(engine, s)
 
 
@@ -243,8 +245,4 @@ def project(engine, relation_name, attributes):
         attr_names = attributes.keys()
     except AttributeError:
         attr_names = attributes
-    columns = list(map(column, attr_names))
-    s = select(columns=columns, from_obj=table(relation_name),
-               order_by=columns)
-    res = _execute(engine, s)
-    return res
+    return get_data(engine, relation_name, attr_names, order_by=attr_names)

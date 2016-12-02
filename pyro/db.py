@@ -152,6 +152,27 @@ def natural_join(engine, relations, attributes):
     return _execute(engine, s)
 
 
+def get_data(engine, relation_name, attributes, constraint=None):
+    """
+    Core module function.
+
+    Low level SELECT wrapper that gets specified attributes that
+    satisfy logical constraint `where`.
+
+    :param engine: SQLAlchemy engine to be used
+    :param relation_name: relation to scan
+    :param attributes: list of attribute names or dictionary of name -> types
+    :param constraint: logical constraint
+    """
+    if constraint:
+        whereclause = and_(column(k) == v for k, v in constraint.items())
+    else:
+        whereclause = None
+    s = select(columns=map(column, attributes), from_obj=table(relation_name),
+               whereclause=whereclause)
+    return _execute(engine, s)
+
+
 def get_rows(engine, relation):
     """
     Obtains all table rows from Database. Performs SELECT under the hood.

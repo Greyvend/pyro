@@ -1,11 +1,11 @@
 from sqlalchemy import MetaData, Integer, String, Column, Table, ForeignKey
+from sqlalchemy.dialects.mysql import REAL
 from sqlalchemy.exc import InternalError
 from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
-from sqlalchemy.dialects.mysql import REAL
 
 from pyro import db
 from pyro.db import create_table, _transform_column_type, _execute, \
-    get_rows, delete_rows, insert_rows
+    get_rows, delete_rows, insert_rows, get_data
 from tests.alchemy import DatabaseTestCase
 
 
@@ -316,6 +316,52 @@ class TestJoin(DatabaseTestCase):
                        'region_name': 'Alaska', 'price': 45.32}, join_result)
         self.assertNotIn({'product_name': 'Bananas',
                           'region_name': 'Texas', 'price': 12.6}, join_result)
+
+
+class TestGetData(DatabaseTestCase):
+    def test_simple(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+            ])
+
+        res = get_data(self.engine, 'users', ['user_name', 'user_fullname'])
+
+        first_row = res[0]
+        self.assertEqual(first_row['user_name'], 'jack')
+        self.assertEqual(first_row['user_fullname'], 'Jack Jones')
+        second_row = res[1]
+        self.assertEqual(second_row['user_name'], 'wendy')
+        self.assertEqual(second_row['user_fullname'], 'Wendy Williams')
+
+    def test_with_constraint(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+            ])
+
+        res = get_data(self.engine, 'users', ['user_name', 'user_fullname'],
+                       constraint={'user_fullname': 'Jack Jones'})
+
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0]['user_name'], 'jack')
+        self.assertEqual(res[0]['user_fullname'], 'Jack Jones')
 
 
 class TestGetRows(DatabaseTestCase):

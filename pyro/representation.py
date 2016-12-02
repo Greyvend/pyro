@@ -14,12 +14,44 @@ def _get_hierarchy(engine, relation_name, attributes):
     :return: list of attribute names in correct order. First attribute to be
     used as top level in hierarchy, the last one is bottom level
     """
-    # Count amount of different values in each of attributes
-    # attributes = list(map(attribute_name, attributes['attributes']))
     counts = db.count_attributes(engine, relation_name, attributes)
     counted_attributes = zip(counts, attributes)
     sorted_attributes = sorted(counted_attributes)
     return list(zip(*sorted_attributes))[1]
+
+
+def _prettify(hierarchy_y, y, hierarchy_x, x, body,
+              measure):
+    """
+    Assemble all the input parts of the cross table adding necessary spaces
+    and attribute names
+
+    :param hierarchy_y: ordered names of the attributes in the Y dimension
+    :param y: attribute values in Y dimension
+    :param hierarchy_x: ordered names of the attributes in the X dimension
+    :param x: attribute values in X dimension
+    :param body: table contents
+    :param measure: name of the measure attribute
+
+    :return generator expression yielding rows of the final table
+    """
+    y_list = ([d[key] for key in hierarchy_y] for d in y)
+    transposed_y = zip(*y_list)
+    empty_y_cells = tuple('' for _ in range(len(hierarchy_x)))
+    final_y = (empty_y_cells + (hierarchy_y[i],) + row
+               for i, row in enumerate(transposed_y))
+
+    content_len = len(body[0])
+    x_measure_header = tuple(hierarchy_x) + ('',) + \
+                       (measure,) * content_len
+    final_x = (tuple([x_row[key] for key in hierarchy_x] + [''] +
+                     body_row)
+               for x_row, body_row in zip(x, body))
+    for row_y in final_y:
+        yield row_y
+    yield x_measure_header
+    for row_x in final_x:
+        yield row_x
 
 
 def _build(engine, contexts, dimensions, measure):
@@ -35,7 +67,6 @@ def _build(engine, contexts, dimensions, measure):
 
     :return: in-memory representation of the result table
     """
-    cross_table = []
     assert len(contexts) == 3
     # section 1: build top part of the header (Y dimension)
     relation_y_name = compose_tj_name(contexts[0])
@@ -52,6 +83,7 @@ def _build(engine, contexts, dimensions, measure):
     body = []
     for row in projection_x:
         # TODO: same_rows_amount = count_equal(projection_x, i), i - row index
+        # TODO: or just iterate over group_by(projection_x)
         body_row = []
         for col in projection_y:
             where_dict = {**row, **col}
@@ -64,24 +96,8 @@ def _build(engine, contexts, dimensions, measure):
         body.append(body_row)
 
     # section 4: finally assemble all 3 parts into single table view
-    # transpose, fill empty cells and attribute names
-    # section 4.1: transpose y projection to rows form
-    list_projection_y = ([d[key] for key in hierarchy_y] for d in projection_y)
-    transposed_y = zip(*list_projection_y)
-    empty_y_cells = tuple('' for _ in range(len(hierarchy_x)))
-    final_y = (empty_y_cells + (hierarchy_y[i],) + row
-               for i, row in enumerate(transposed_y))
-
-    content_len = len(body[0])
-    x_measure_header = tuple(hierarchy_x) + ('',) + \
-                        (measure,) * content_len
-    list_projection_x = (tuple([x_row[key] for key in hierarchy_x] + [''] + body_row)
-                         for x_row, body_row in zip(projection_x, body))
-    # fill everything in cross_table
-    cross_table.extend(final_y)
-    cross_table.append(x_measure_header)
-    cross_table.extend(list_projection_x)
-    return cross_table
+    return _prettify(hierarchy_y, projection_y, hierarchy_x, projection_x, body,
+                     measure)
 
 
 def _to_html(table):

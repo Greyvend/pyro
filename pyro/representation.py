@@ -96,8 +96,8 @@ def _build(engine, contexts, dimensions, measure):
         body.append(body_row)
 
     # section 4: finally assemble all 3 parts into single table view
-    return _prettify(hierarchy_y, projection_y, hierarchy_x, projection_x, body,
-                     measure)
+    return _prettify(hierarchy_y, projection_y, hierarchy_x, projection_x,
+                     body, measure)
 
 
 def _to_html(table):

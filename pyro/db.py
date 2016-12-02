@@ -180,9 +180,7 @@ def get_rows(engine, relation):
     :param engine: SQLAlchemy engine to be used
     :param relation: relation to scan
     """
-    s = select(columns=map(column, relation['attributes'].keys()),
-               from_obj=table(relation['name']))
-    return _execute(engine, s)
+    return get_data(engine, relation['name'], relation['attributes'].keys())
 
 
 def delete_rows(engine, relation, rows):

@@ -1,3 +1,5 @@
+from itertools import groupby
+
 from pyro import db
 from pyro.tj import compose_tj_name
 
@@ -100,14 +102,80 @@ def _build(engine, contexts, dimensions, measure):
                      body, measure)
 
 
-def _to_html(table):
-    return '<html></html>'
+def _group_cells(table, max_col):
+    column_list = list(zip(*table))
+    res = []
+    for col_num in range(max_col):
+        cell_group = {}
+        for k, group in groupby(column_list[col_num]):
+            g = list(group)
+            cell_group[g[0]] = len(g)
+        res.append(cell_group)
+    return res
+
+
+def _to_html(table, dimensions):
+    _table = list(table)
+    len_y = len(dimensions[0])
+    len_x = len(dimensions[1])
+
+    html = ['<html>', '<table>']
+    row_format = '<tr>{}</tr>'
+    cell_format = '<th>{}</th>'
+    # section 1: build top header (Y part)
+    cell_colspan_format = '<th colspan="{}">{}</th>'
+    table_content = []
+    for row in _table[:len_y]:
+        cell_list = []
+        for k, group in groupby(row):
+            cell_group = list(group)
+            group_len = len(cell_group)
+            if len(cell_group) > 1:
+                cell_str = cell_colspan_format.format(group_len, cell_group[0])
+            else:
+                cell_str = cell_format.format(cell_group[0])
+            cell_list.append(cell_str)
+        row_str = row_format.format(''.join(cell_list))
+        table_content.append(row_str)
+
+    x_measure = (cell_format.format(c) for c in _table[len_y])
+    x_measure_row_str = row_format.format(''.join(x_measure))
+    table_content.append(x_measure_row_str)
+
+    # section 2: build left header (X part) and body
+    cell_rowspan_format = '<th rowspan="{}">{}</th>'
+    cell_groups = _group_cells(_table[len_y + 1:], max_col=len_x)
+    for local_row_num, row in enumerate(_table[len_y + 1:]):
+        row_num = len_y + 1 + local_row_num
+        cell_list = []
+        # fill left header (X part)
+        for col_num, cell in enumerate(row[:len_x]):
+            previous_row = _table[row_num - 1]
+            cell_appearances = cell_groups[col_num][cell]
+            if cell == previous_row[col_num]:
+                cell_str = ''
+            elif cell_appearances > 1:
+                cell_str = cell_rowspan_format.format(cell_appearances, cell)
+            else:
+                cell_str = cell_format.format(cell)
+            cell_list.append(cell_str)
+        # fill body
+        for cell in row[len_x:]:
+            cell_str_stripped = str(cell).strip('()')
+            cell_str = cell_format.format(cell_str_stripped)
+            cell_list.append(cell_str)
+        row_str = row_format.format(''.join(cell_list))
+        table_content.append(row_str)
+    html.extend(table_content)
+    html.append('</table>')
+    html.append('</html>')
+    return ''.join(html)
 
 
 def create(engine, contexts, dimensions, measure, file_name):
     # perform calculations and prepare HTML code
     table = _build(engine, contexts, dimensions, measure)
-    html_table = _to_html(table)
+    html_table = _to_html(table, dimensions)
     # write to a file
     with open(file_name, 'w') as html_file:
         html_file.write(html_table)

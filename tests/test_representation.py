@@ -110,3 +110,30 @@ class TestToHtml(TestCase):
         self.assertEqual(html.count('</tr>'), 6)
         self.assertEqual(html.count('<th>'), 6 * 4)
         self.assertEqual(html.count('</th>'), 6 * 4)
+
+    def test_col_spans(self):
+        """
+        Check the case with column spanning cells
+        """
+        table = [['', 'Y1', 'v_1', 'v_1', 'v_2', 'v_2', 'v_3'],
+                 ['', 'Y2', 'v_21', 'v_22', 'v_21', 'v_22', 'v_21'],
+                 ['X1', '', 'measure', 'measure', 'measure', 'measure',
+                  'measure'],
+                 ['X1_value_1', '', 11, 12, 13, 14, 15],]
+        dimensions = [['Y1', 'Y2'], ['X1']]
+
+        html = _to_html(table, dimensions)
+
+        self.assertEqual(html.count('colspan'), 2)
+        self.assertNotIn('rowspan', html)
+        self.assertNotIn('(', html)
+        self.assertNotIn(')', html)
+        self.assertEqual(html.count('<html>'), 1)
+        self.assertEqual(html.count('</html>'), 1)
+        self.assertEqual(html.count('<table>'), 1)
+        self.assertEqual(html.count('</table>'), 1)
+        self.assertEqual(html.count('<tr'), 4)
+        self.assertEqual(html.count('</tr>'), 4)
+        self.assertEqual(html.count('<th'), 7 * 4 - 2)
+        self.assertEqual(html.count('</th>'), 7 * 4 - 2)
+

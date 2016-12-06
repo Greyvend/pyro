@@ -121,9 +121,9 @@ def _to_html(table, dimensions):
 
     html = ['<html>', '<table>']
     row_format = '<tr>{}</tr>'
-    cell_format = '<th>{}</th>'
+    cell_format = '<td>{}</td>'
     # section 1: build top header (Y part)
-    cell_colspan_format = '<th colspan="{}">{}</th>'
+    cell_colspan_format = '<td colspan="{}">{}</td>'
     table_content = []
     for row in _table[:len_y]:
         cell_list = []
@@ -143,7 +143,7 @@ def _to_html(table, dimensions):
     table_content.append(x_measure_row_str)
 
     # section 2: build left header (X part) and body
-    cell_rowspan_format = '<th rowspan="{}">{}</th>'
+    cell_rowspan_format = '<td rowspan="{}">{}</td>'
     cell_groups = _group_cells(_table[len_y + 1:], max_col=len_x)
     for local_row_num, row in enumerate(_table[len_y + 1:]):
         row_num = len_y + 1 + local_row_num

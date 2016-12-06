@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -108,8 +109,8 @@ class TestToHtml(TestCase):
         self.assertEqual(html.count('</table>'), 1)
         self.assertEqual(html.count('<tr>'), 6)
         self.assertEqual(html.count('</tr>'), 6)
-        self.assertEqual(html.count('<th>'), 6 * 4)
-        self.assertEqual(html.count('</th>'), 6 * 4)
+        self.assertEqual(html.count('<td>'), 6 * 4)
+        self.assertEqual(html.count('</td>'), 6 * 4)
 
     def test_col_spans(self):
         """
@@ -134,6 +135,38 @@ class TestToHtml(TestCase):
         self.assertEqual(html.count('</table>'), 1)
         self.assertEqual(html.count('<tr'), 4)
         self.assertEqual(html.count('</tr>'), 4)
-        self.assertEqual(html.count('<th'), 7 * 4 - 2)
-        self.assertEqual(html.count('</th>'), 7 * 4 - 2)
+        self.assertEqual(html.count('<td'), 7 * 4 - 2)
+        self.assertEqual(html.count('</td>'), 7 * 4 - 2)
 
+    def test_row_spans(self):
+        """
+        Check the case with row spanning cells
+        """
+        table = [['', '', 'Y1', 'value_1', 'value_2'],
+                 ['', '', 'Y2', 'value_2_1', 'value_2_2'],
+                 ['X1', 'X2', '', 'measure', 'measure'],
+                 ['X1_v1', 'X2_v1', '', (11, 12.5, 13), (14.6,)],
+                 ['X1_v1', 'X2_v2', '', (41.0, 52, 65.2), (111.2, 3)],
+                 ['X1_v2', 'X2_v1', '', (4.0, 52, 65.2), (111.2, 3)],
+                 ['X1_v2', 'X2_v2', '', (51.0, 56, 65.2), (132.2, 3)],
+                 ['X1_v2', 'X2_v3', '', (41.0, 52, 65.2), (111.2, 3)],
+                 ['X1_v3', 'X2_v1', '', (84, 55.3, 7), (10, 3.5, 93)],]
+        dimensions = [['Y1', 'Y2'], ['X1', 'X2']]
+
+        html = _to_html(table, dimensions)
+
+        with open('table-{}.html'.format(datetime.now()), 'w') as html_file:
+            html_file.write(html)
+
+        self.assertEqual(html.count('rowspan'), 2)
+        self.assertEqual(html.count('colspan'), 2)  # in first empty cells
+        self.assertNotIn('(', html)
+        self.assertNotIn(')', html)
+        self.assertEqual(html.count('<html>'), 1)
+        self.assertEqual(html.count('</html>'), 1)
+        self.assertEqual(html.count('<table>'), 1)
+        self.assertEqual(html.count('</table>'), 1)
+        self.assertEqual(html.count('<tr>'), 9)
+        self.assertEqual(html.count('</tr>'), 9)
+        self.assertEqual(html.count('<td'), 9 * 5 - 2 - 1 - 2)
+        self.assertEqual(html.count('</td>'), 9 * 5 - 2 - 1 - 2)

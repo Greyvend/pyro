@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest import TestCase
 
 from pyro.utils import containing_relation, min_dict, all_equal, \
@@ -229,6 +230,20 @@ class TestXstr(TestCase):
         str_t = xstr(t)
 
         self.assertEqual(str_t, '')
+
+    def test_tuple_single(self):
+        t = (22,)
+
+        str_t = xstr(t)
+
+        self.assertEqual(str_t, '22')
+
+    def test_tuple_types_mix(self):
+        t = (22, True, datetime(2014, 7, 15, 16), 'str here')
+
+        str_t = xstr(t)
+
+        self.assertEqual(str_t, '22, True, 2014-07-15 16:00:00, str here')
 
     def test_number(self):
         obj = 15.3

@@ -124,8 +124,8 @@ def xstr(obj):
     :param obj: object to convert to string
     """
     if type(obj) is tuple:
-        none_replaced = tuple(elem for elem in obj if elem is not None)
-        return str(none_replaced).strip('()')
+        none_replaced = (elem for elem in obj if elem is not None)
+        return ', '.join(str(elem) for elem in none_replaced).strip('()')
     else:
         if obj is None:
             return ''

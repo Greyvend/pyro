@@ -1,5 +1,7 @@
 from itertools import groupby
 
+from mako.template import Template
+
 from pyro import db
 from pyro.tj import compose_tj_name
 
@@ -177,5 +179,7 @@ def create(engine, contexts, dimensions, measure, file_name):
     table = _build(engine, contexts, dimensions, measure)
     html_table = _to_html(table, dimensions)
     # write to a file
+    template = Template(filename='templates/cross_table.html')
     with open(file_name, 'w') as html_file:
-        html_file.write(html_table)
+        html = template.render(table=html_table)
+        html_file.write(html)

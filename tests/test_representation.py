@@ -12,10 +12,10 @@ class TestGetHierarchy(TestCase):
         increasing amounts of values
         """
         relation_name = 'TJ_random'
-        dimension = {'attributes': ['R1.A1']}
+        attributes = ['A1']
         mock_db.count_attributes.return_value = [55]
 
-        hierarchy = _get_hierarchy(None, relation_name, dimension)
+        hierarchy = _get_hierarchy(None, relation_name, attributes)
 
         self.assertEqual(hierarchy, ('A1',))
 
@@ -26,10 +26,10 @@ class TestGetHierarchy(TestCase):
         increasing amounts of values
         """
         relation_name = 'TJ_random'
-        dimension = {'attributes': ['R1.A1', 'R2.A5', 'R1.A4']}
+        attributes = ['A1', 'A5', 'A4']
         mock_db.count_attributes.return_value = [55, 64, 1898]
 
-        hierarchy = _get_hierarchy(None, relation_name, dimension)
+        hierarchy = _get_hierarchy(None, relation_name, attributes)
 
         self.assertEqual(hierarchy, ('A1', 'A5', 'A4'))
 
@@ -39,10 +39,10 @@ class TestGetHierarchy(TestCase):
         Check the case when hierarchy has different order of attributes
         """
         relation_name = 'TJ_random'
-        dimension = {'attributes': ['R1.A1', 'R2.A5', 'R1.A4']}
+        attributes = ['A1', 'A5', 'A4']
         mock_db.count_attributes.return_value = [55, 1000, 64]
 
-        hierarchy = _get_hierarchy(None, relation_name, dimension)
+        hierarchy = _get_hierarchy(None, relation_name, attributes)
 
         self.assertEqual(hierarchy, ('A1', 'A4', 'A5'))
 

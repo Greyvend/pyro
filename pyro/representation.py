@@ -4,6 +4,7 @@ from mako.template import Template
 
 from pyro import db
 from pyro.tj import compose_tj_name
+from pyro.utils import xstr
 
 
 def _get_hierarchy(engine, relation_name, attributes):
@@ -121,7 +122,7 @@ def _to_html(table, dimensions):
     len_y = len(dimensions[0])
     len_x = len(dimensions[1])
 
-    html = ['<html>', '<table>']
+    table_tag = ['<table>']
     row_format = '<tr>{}</tr>'
     cell_format = '<td>{}</td>'
     # section 1: build top header (Y part)
@@ -163,15 +164,13 @@ def _to_html(table, dimensions):
             cell_list.append(cell_str)
         # fill body
         for cell in row[len_x:]:
-            cell_str_stripped = str(cell).strip('()')
-            cell_str = cell_format.format(cell_str_stripped)
+            cell_str = cell_format.format(xstr(cell))
             cell_list.append(cell_str)
         row_str = row_format.format(''.join(cell_list))
         table_content.append(row_str)
-    html.extend(table_content)
-    html.append('</table>')
-    html.append('</html>')
-    return ''.join(html)
+    table_tag.extend(table_content)
+    table_tag.append('</table>')
+    return ''.join(table_tag)
 
 
 def create(engine, contexts, dimensions, measure, file_name):

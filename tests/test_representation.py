@@ -1,4 +1,3 @@
-from datetime import datetime
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -154,9 +153,6 @@ class TestToHtml(TestCase):
         dimensions = [['Y1', 'Y2'], ['X1', 'X2']]
 
         html = _to_html(table, dimensions)
-
-        with open('table-{}.html'.format(datetime.now()), 'w') as html_file:
-            html_file.write(html)
 
         self.assertEqual(html.count('rowspan'), 2)
         self.assertEqual(html.count('colspan'), 2)  # in first empty cells

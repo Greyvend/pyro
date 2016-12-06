@@ -113,3 +113,20 @@ def assemble_list(l, key=lambda x: x):
             if key(elem) not in map(key, res):
                 res.append(elem)
     return res
+
+
+def xstr(obj):
+    """
+    Convert any Python object that supports `str` descriptor, while taking care
+    of tuples, stripping brackets and removing None elements if any. Simple
+    NoneType also is converted to empty string instead of string `None`.
+
+    :param obj: object to convert to string
+    """
+    if type(obj) is tuple:
+        none_replaced = tuple(elem for elem in obj if elem is not None)
+        return str(none_replaced).strip('()')
+    else:
+        if obj is None:
+            return ''
+        return str(obj)

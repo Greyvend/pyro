@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from pyro.utils import containing_relation, min_dict, all_equal, \
-    all_attributes, chunks, assemble_list
+    all_attributes, chunks, assemble_list, xstr
 
 
 class TestAllAttributes(TestCase):
@@ -199,3 +199,47 @@ class TestAssembleList(TestCase):
         self.assertEqual(len(new_list), 2)
         self.assertEqual(new_list[0], {'name': 'R4'})
         self.assertEqual(new_list[1], {'name': 'R5'})
+
+
+class TestXstr(TestCase):
+    def test_tuple_without_none(self):
+        t = (20.4, 4, 55)
+
+        str_t = xstr(t)
+
+        self.assertEqual(str_t, '20.4, 4, 55')
+
+    def test_tuple_with_none(self):
+        t = (20.4, None, 55, None, None)
+
+        str_t = xstr(t)
+
+        self.assertEqual(str_t, '20.4, 55')
+
+    def test_tuple_only_nones(self):
+        t = (None, None)
+
+        str_t = xstr(t)
+
+        self.assertEqual(str_t, '')
+
+    def test_tuple_single_none(self):
+        t = (None,)
+
+        str_t = xstr(t)
+
+        self.assertEqual(str_t, '')
+
+    def test_number(self):
+        obj = 15.3
+
+        str_t = xstr(obj)
+
+        self.assertEqual(str_t, '15.3')
+
+    def test_str(self):
+        obj = 'string it is'
+
+        str_t = xstr(obj)
+
+        self.assertEqual(str_t, 'string it is')

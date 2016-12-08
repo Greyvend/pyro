@@ -1,5 +1,6 @@
+Mako==1.0.6
+MarkupSafe==0.23
 PyMySQL==0.7.6
 six==1.10.0
 SQLAlchemy==1.0.14
 SQLAlchemy-Utils==0.32.7
-wheel==0.24.0

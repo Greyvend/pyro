@@ -114,6 +114,10 @@ class TestIsSubordinate(TestCase):
             context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'}))
+        self.assertFalse(pyro.tj.is_subordinate(
+            context,
+            {'A_1': None, 'A_2': 'b', 'A_3': None, 'g': 'R_1'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'}))
         self.assertTrue(pyro.tj.is_subordinate(
             context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'},

@@ -1,0 +1,59 @@
+{
+    "source_db": {
+        "drivername": "mysql+pymysql",
+        "host": "localhost",
+        "port": 3306,
+        "database": "database",
+        "username": "username",
+        "password": "password"
+    },
+    "cube_db": {
+        "drivername": "sqlite",
+        "database": "TJ_DB"
+    },
+    "test_db": {
+        "drivername": "mysql+pymysql",
+        "database": "test_pyro"
+    },
+    "multi valued dependencies": [],
+    "dimensions": [
+        {
+            "name": "dimension_1",
+            "attributes": ["R1.A1", "R2.A2", "R3.A3"]
+        },
+        {
+            "name": "dimension_1",
+            "attributes": ["R1.A1", "R2.A2", "R3.A3"],
+            "constraint": [
+                [
+                    {
+                        "attribute": "A1",
+                        "operation": ">",
+                        "expression": 4
+                    },
+                    {
+                        "attribute": "A2",
+                        "operation": "=",
+                        "expression": 6
+                    }
+                ],
+                [
+                    {
+                        "attribute": "A4",
+                        "operation": "<>",
+                        "expression": "str value"
+                    },
+                    {
+                        "attribute": "A6",
+                        "operation": "NOT BETWEEN",
+                        "expression": [1, 16]
+                    }
+                ]
+            ]
+        }
+    ],
+    "measure": "",
+    "app_context": false,
+    "output_file": "dispensary_table.html",
+    "cache_file": "cache.json"
+}

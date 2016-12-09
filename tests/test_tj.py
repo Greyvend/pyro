@@ -65,81 +65,61 @@ class TestIsLessOrEqual(TestCase):
 
 class TestIsSubordinate(TestCase):
     def test_same_relation_set_one_relation(self):
-        context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}}]
-        self.assertTrue(pyro.tj.is_subordinate(
-            context,
-            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'},
-            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
-        self.assertFalse(pyro.tj.is_subordinate(
-            context,
-            {'A_1': 'aa', 'A_2': 'b', 'g': '[A_1,A_2]'},
-            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
-        self.assertFalse(pyro.tj.is_subordinate(
-            context,
-            {'A_1': None, 'A_2': 'b', 'g': '[A_1,A_2]'},
-            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
-        self.assertFalse(pyro.tj.is_subordinate(
-            context,
-            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'},
-            {'A_1': 'a', 'A_2': None, 'g': '[A_1,A_2]'}))
+        self.assertTrue(
+            pyro.tj.is_subordinate({'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'},
+                                   {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
+        self.assertFalse(
+            pyro.tj.is_subordinate({'A_1': 'aa', 'A_2': 'b', 'g': '[A_1,A_2]'},
+                                   {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
+        self.assertFalse(
+            pyro.tj.is_subordinate({'A_1': None, 'A_2': 'b', 'g': '[A_1,A_2]'},
+                                   {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
+        self.assertFalse(
+            pyro.tj.is_subordinate({'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'},
+                                   {'A_1': 'a', 'A_2': None,
+                                    'g': '[A_1,A_2]'}))
 
     def test_same_relation_set_two_relations(self):
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
                    {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
         vector = '[A_1,A_2],[A_2,A_3]'
         self.assertTrue(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': vector},
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': vector}))
         self.assertFalse(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': vector},
             {'A_1': 'a', 'A_2': 'bb', 'A_3': 'c', 'g': vector}))
         self.assertFalse(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': vector},
             {'A_1': 'a', 'A_2': 'bb', 'A_3': 'c', 'g': vector}))
         self.assertTrue(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': vector},
             {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': vector}))
 
     def test_different_relation_sets(self):
-        context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
-                   {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
         self.assertFalse(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
             {'A_1': None, 'A_2': 'b', 'A_3': 'c', 'g': '[A_2,A_3]'}))
         self.assertTrue(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': '[A_1,A_2],[A_2,A_3]'}))
         self.assertFalse(pyro.tj.is_subordinate(
-            context,
             {'A_1': None, 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': '[A_1,A_2],[A_2,A_3]'}))
         self.assertTrue(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2],[A_2,A_3]'}))
         self.assertFalse(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2],[A_2,A_3]'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'}))
 
         # same attribute values but different relation set, which leads to non
         # subordination
-        context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
-                   {'name': 'R_2', 'attributes': {'A_1': 'INT', 'A_3': 'INT'}},
-                   {'name': 'R_3', 'attributes': {'A_2': 'INT', 'A_4': 'INT'}}]
         self.assertFalse(pyro.tj.is_subordinate(
-            context,
             {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None,
              'g': '[A_1,A_2]'},
             {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'A_4': 'd',
-             'g': '[A_1,A_3],[A_2,A_4]'})
-        )
+             'g': '[A_1,A_3],[A_2,A_4]'}))
 
     def test_missing_attributes(self):
         """
@@ -151,25 +131,22 @@ class TestIsSubordinate(TestCase):
                    {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}},
                    {'name': 'R_3', 'attributes': {'A_3': 'INT', 'A_4': 'INT'}}]
         self.assertTrue(pyro.tj.is_subordinate(
-            context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None, 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'}))
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None,
+             'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': '[A_1,A_2],[A_2,A_3]'}))
 
 
 class TestFilterSubordinateRows(TestCase):
     def test(self):
-        context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
-                   {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
-        base_row_1 = {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'}
-        base_row_2 = {'A_1': 'a', 'A_2': None, 'A_3': None, 'g': 'R_1'}
-        base_row_3 = {'A_1': None, 'A_2': 'b', 'A_3': None, 'g': 'R_1'}
+        base_row_1 = {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'}
+        base_row_2 = {'A_1': 'a', 'A_2': None, 'A_3': None, 'g': '[A_1,A_2]'}
+        base_row_3 = {'A_1': None, 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'}
         tj_data = [base_row_1, base_row_2, base_row_3]
         new_data = [
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1,R_2'},
-            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': 'R_1,R_2'}]
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2],[A_2,A_3]'},
+            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': '[A_1,A_2],[A_2,A_3]'}]
 
-        rows_to_delete = pyro.tj.filter_subordinate_rows(context, tj_data,
-                                                         new_data)
+        rows_to_delete = pyro.tj.filter_subordinate_rows(tj_data, new_data)
 
         self.assertEqual(next(rows_to_delete), base_row_1)
         self.assertEqual(next(rows_to_delete), base_row_2)

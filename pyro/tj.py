@@ -65,14 +65,12 @@ def decode_vector(row):
     return row[VECTOR_ATTRIBUTE].split(VECTOR_SEPARATOR)
 
 
-def is_empty_attr(context, row, attribute_name):
+def is_empty_attr(row, attribute_name):
     """
     Attribute attr in row is considered empty if it has value None and
     its vector doesn't contain any relations having given attribute in their
     schema.
 
-    :param context: context to apply
-    :type context: list of dicts representing relations
     :param row: target row
     :type row: dict
     :param attribute_name: target attribute name
@@ -97,7 +95,7 @@ def is_less_or_equal(v1, v2):
     return set(v1).issubset(v2)
 
 
-def is_subordinate(context, r1, r2):
+def is_subordinate(r1, r2):
     if r1[VECTOR_ATTRIBUTE] not in r2[VECTOR_ATTRIBUTE]:
         return False
     attributes = common_keys(r1, r2)
@@ -105,24 +103,23 @@ def is_subordinate(context, r1, r2):
     # TODO: second optimization step
     # attributes = r1['attributes']
     for attr in attributes:
-        if r1[attr] != r2[attr] and not is_empty_attr(context, r1, attr):
+        if r1[attr] != r2[attr] and not is_empty_attr(r1, attr):
             return False
     return True
 
 
-def filter_subordinate_rows(context, tj_data, new_data):
+def filter_subordinate_rows(tj_data, new_data):
     """
     Filter existing tj_data based on new_data. Return subordinate rows to
     be deleted.
 
-    :param context: context of operation
     :param tj_data: list of rows currently existing in TJ
     :param new_data: list of new rows
     :return: list of rows to delete
     """
     for tj_row in tj_data:
         for new_row in new_data:
-            if is_subordinate(context, tj_row, new_row):
+            if is_subordinate(tj_row, new_row):
                 yield tj_row
 
 
@@ -162,7 +159,7 @@ def build(context, dependencies, source, cube):
                                               key=lambda r: r['name']))
             row[VECTOR_ATTRIBUTE] = VECTOR_SEPARATOR.join(all_attributes)
         tj_data = db.get_rows(cube, tj)
-        rows_to_delete = filter_subordinate_rows(context, tj_data, join_data)
+        rows_to_delete = filter_subordinate_rows(tj_data, join_data)
         db.delete_rows(cube, tj, rows_to_delete)
         # TODO: join_data_filtered = filter(constraint, join_data)
         # TODO: db.insert_rows(cube, tj, join_data_filtered)

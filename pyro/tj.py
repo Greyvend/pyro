@@ -2,7 +2,6 @@ from sqlalchemy import String
 
 from pyro import db
 from pyro.transformation import lossless_combinations
-from pyro.utils import common_keys
 
 VECTOR_ATTRIBUTE = 'g'
 VECTOR_SEPARATOR = ','
@@ -98,12 +97,10 @@ def is_less_or_equal(v1, v2):
 def is_subordinate(r1, r2):
     if r1[VECTOR_ATTRIBUTE] not in r2[VECTOR_ATTRIBUTE]:
         return False
-    attributes = common_keys(r1, r2)
+    attributes = list(r1.keys())
     attributes.remove(VECTOR_ATTRIBUTE)
-    # TODO: second optimization step
-    # attributes = r1['attributes']
     for attr in attributes:
-        if r1[attr] != r2[attr] and not is_empty_attr(r1, attr):
+        if r1[attr] != r2.get(attr) and not is_empty_attr(r1, attr):
             return False
     return True
 

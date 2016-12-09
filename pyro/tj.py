@@ -2,7 +2,7 @@ from sqlalchemy import String
 
 from pyro import db
 from pyro.transformation import lossless_combinations
-from pyro.utils import containing_relation, common_keys
+from pyro.utils import common_keys
 
 VECTOR_ATTRIBUTE = 'g'
 VECTOR_SEPARATOR = ','
@@ -79,16 +79,10 @@ def is_empty_attr(context, row, attribute_name):
     :type attribute_name: str
     :return: True - if the attribute value in row is empty, False otherwise
     """
-    if row[attribute_name] is not None:
+    if row[attribute_name] is not None or \
+                    attribute_name in row[VECTOR_ATTRIBUTE]:
         return False
-    row_relation_names = decode_vector(row)
-    row_relations = filter(lambda rel: rel['name'] in row_relation_names,
-                           context)
-    try:
-        containing_relation(row_relations, attribute_name)
-    except ValueError:
-        return True
-    return False
+    return True
 
 
 def is_less_or_equal(v1, v2):
@@ -104,10 +98,12 @@ def is_less_or_equal(v1, v2):
 
 
 def is_subordinate(context, r1, r2):
-    if not is_less_or_equal(*map(decode_vector, [r1, r2])):
+    if r1[VECTOR_ATTRIBUTE] not in r2[VECTOR_ATTRIBUTE]:
         return False
     attributes = common_keys(r1, r2)
     attributes.remove(VECTOR_ATTRIBUTE)
+    # TODO: second optimization step
+    # attributes = r1['attributes']
     for attr in attributes:
         if r1[attr] != r2[attr] and not is_empty_attr(context, r1, attr):
             return False
@@ -161,9 +157,13 @@ def build(context, dependencies, source, cube):
         join_data = db.natural_join(source, relations, attributes)
         # not using functional approach here to avoid data copying
         for row in join_data:
-            row[VECTOR_ATTRIBUTE] = VECTOR_SEPARATOR.join(r['name']
-                                                          for r in relations)
+            all_attributes = (str(sorted(r['attributes'].keys()))
+                              for r in sorted(relations,
+                                              key=lambda r: r['name']))
+            row[VECTOR_ATTRIBUTE] = VECTOR_SEPARATOR.join(all_attributes)
         tj_data = db.get_rows(cube, tj)
         rows_to_delete = filter_subordinate_rows(context, tj_data, join_data)
         db.delete_rows(cube, tj, rows_to_delete)
+        # TODO: join_data_filtered = filter(constraint, join_data)
+        # TODO: db.insert_rows(cube, tj, join_data_filtered)
         db.insert_rows(cube, tj, join_data)

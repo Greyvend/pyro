@@ -68,64 +68,65 @@ class TestIsSubordinate(TestCase):
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}}]
         self.assertTrue(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'g': 'R_1'}))
+            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'aa', 'A_2': 'b', 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'g': 'R_1'}))
+            {'A_1': 'aa', 'A_2': 'b', 'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': None, 'A_2': 'b', 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'g': 'R_1'}))
+            {'A_1': None, 'A_2': 'b', 'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'}))
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': None, 'g': 'R_1'}))
+            {'A_1': 'a', 'A_2': 'b', 'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': None, 'g': '[A_1,A_2]'}))
 
     def test_same_relation_set_two_relations(self):
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
                    {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
+        vector = '[A_1,A_2],[A_2,A_3]'
         self.assertTrue(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'},
-            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'}))
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': vector},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': vector}))
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'},
-            {'A_1': 'a', 'A_2': 'bb', 'A_3': 'c', 'g': 'R_1,R_2'}))
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': vector},
+            {'A_1': 'a', 'A_2': 'bb', 'A_3': 'c', 'g': vector}))
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': 'R_1,R_2'},
-            {'A_1': 'a', 'A_2': 'bb', 'A_3': 'c', 'g': 'R_1,R_2'}))
+            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': vector},
+            {'A_1': 'a', 'A_2': 'bb', 'A_3': 'c', 'g': vector}))
         self.assertTrue(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': 'R_1,R_2'},
-            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': 'R_1,R_2'}))
+            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': vector},
+            {'A_1': 'a', 'A_2': None, 'A_3': 'c', 'g': vector}))
 
     def test_different_relation_sets(self):
         context = [{'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
                    {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}}]
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'},
-            {'A_1': None, 'A_2': 'b', 'A_3': 'c', 'g': 'R_2'}))
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
+            {'A_1': None, 'A_2': 'b', 'A_3': 'c', 'g': '[A_2,A_3]'}))
         self.assertTrue(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'}))
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': '[A_1,A_2],[A_2,A_3]'}))
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': None, 'A_2': 'b', 'A_3': None, 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': 'R_1,R_2'}))
+            {'A_1': None, 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'g': '[A_1,A_2],[A_2,A_3]'}))
         self.assertTrue(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1,R_2'}))
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2],[A_2,A_3]'}))
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1,R_2'},
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': 'R_1'}))
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2],[A_2,A_3]'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'g': '[A_1,A_2]'}))
 
         # same attribute values but different relation set, which leads to non
         # subordination
@@ -134,8 +135,10 @@ class TestIsSubordinate(TestCase):
                    {'name': 'R_3', 'attributes': {'A_2': 'INT', 'A_4': 'INT'}}]
         self.assertFalse(pyro.tj.is_subordinate(
             context,
-            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None, 'g': 'R_1'},
-            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'A_4': 'd', 'g': 'R_2,R_3'})
+            {'A_1': 'a', 'A_2': 'b', 'A_3': None, 'A_4': None,
+             'g': '[A_1,A_2]'},
+            {'A_1': 'a', 'A_2': 'b', 'A_3': 'c', 'A_4': 'd',
+             'g': '[A_1,A_3],[A_2,A_4]'})
         )
 
     def test_missing_attributes(self):
@@ -276,19 +279,19 @@ class TestBuild(DatabaseTestCase):
         self.assertEqual(all_records[0]['B'], 22)
         self.assertEqual(all_records[0]['C'], None)
         self.assertEqual(all_records[0]['D'], None)
-        self.assertEqual(all_records[0]['g'], 'R1')
+        self.assertEqual(all_records[0]['g'], "['A', 'B', 'C']")
 
         self.assertEqual(all_records[1]['A'], None)
         self.assertEqual(all_records[1]['B'], None)
         self.assertEqual(all_records[1]['C'], 33)
         self.assertEqual(all_records[1]['D'], 44)
-        self.assertEqual(all_records[1]['g'], 'R2')
+        self.assertEqual(all_records[1]['g'], "['C', 'D']")
 
         self.assertEqual(all_records[2]['A'], 1)
         self.assertEqual(all_records[2]['B'], 2)
         self.assertEqual(all_records[2]['C'], 3)
         self.assertEqual(all_records[2]['D'], 4)
-        self.assertEqual(all_records[2]['g'], 'R1,R2')
+        self.assertEqual(all_records[2]['g'], "['A', 'B', 'C'],['C', 'D']")
 
     def test_pseudocontext(self):
         """
@@ -333,4 +336,5 @@ class TestBuild(DatabaseTestCase):
             res = conn.execute(tj)
             all_records = res.fetchall()
         self.assertEqual(len(all_records), 3)
-        self.assertIn('R1,R2', map(lambda r: r['g'], all_records))
+        self.assertIn("['A', 'B', 'C'],['C', 'D']",  # R1 & R2 vector
+                      map(lambda r: r['g'], all_records))

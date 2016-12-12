@@ -444,6 +444,32 @@ class TestToClause(DatabaseTestCase):
         self.assertNotIn({'user_id': 4}, rows)
         self.assertNotIn({'user_id': 5}, rows)
 
+    def test_simple_null_comparison(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': '=',
+                        'value': None}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 1)
+        self.assertIn({'user_id': None}, rows)
+        self.assertNotIn({'user_id': 1}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+        self.assertNotIn({'user_id': 5}, rows)
+        self.assertNotIn({'user_id': 6}, rows)
+
+        constraint = [[{'attribute': 'user_id', 'operator': '<>',
+                        'value': None}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 4)
+        self.assertIn({'user_id': 1}, rows)
+        self.assertIn({'user_id': 4}, rows)
+        self.assertIn({'user_id': 5}, rows)
+        self.assertIn({'user_id': 6}, rows)
+        self.assertNotIn({'user_id': None}, rows)
+
 
 class TestGetRows(DatabaseTestCase):
     def test(self):

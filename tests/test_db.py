@@ -342,7 +342,7 @@ class TestGetData(DatabaseTestCase):
         self.assertEqual(second_row['user_name'], 'wendy')
         self.assertEqual(second_row['user_fullname'], 'Wendy Williams')
 
-    def test_with_constraint(self):
+    def test_with_constraint_dict(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
                       Column('user_id', Integer, primary_key=True),
@@ -362,6 +362,61 @@ class TestGetData(DatabaseTestCase):
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0]['user_name'], 'jack')
         self.assertEqual(res[0]['user_fullname'], 'Jack Jones')
+
+
+class TestToClause(DatabaseTestCase):
+    """
+    This test suite verifies SQLAlchemy Column clause parsing rather implicitly
+    via `get_data` routine
+    """
+    def prepare_data(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_id': 1},
+                {'user_id': 4},
+                {'user_id': 5},
+                {'user_id': 6},
+            ])
+
+    def test_simple_eq(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': '=', 'value': 4}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 1)
+        self.assertIn({'user_id': 4}, rows)
+        self.assertNotIn({'user_id': 1}, rows)
+
+    def test_simple_gt(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': '>', 'value': 4}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 5}, rows)
+        self.assertIn({'user_id': 6}, rows)
+        self.assertNotIn({'user_id': 1}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+
+    def test_simple_le(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': '<=', 'value': 4}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 1}, rows)
+        self.assertIn({'user_id': 4}, rows)
+        self.assertNotIn({'user_id': 5}, rows)
+        self.assertNotIn({'user_id': 6}, rows)
 
 
 class TestGetRows(DatabaseTestCase):

@@ -1,12 +1,10 @@
+import operator
 from copy import deepcopy
 from functools import reduce
 
-from sqlalchemy import Column, Table, MetaData, select, column
-from sqlalchemy import delete
-from sqlalchemy import distinct
-from sqlalchemy import insert
-from sqlalchemy import table
-from sqlalchemy.sql.elements import and_, or_
+from sqlalchemy import Column, Table, MetaData, select, column, delete, \
+    distinct, insert, table
+from sqlalchemy.sql.elements import and_, or_, between
 from sqlalchemy.sql.functions import count
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
@@ -152,6 +150,32 @@ def natural_join(engine, relations, attributes):
     return _execute(engine, s)
 
 
+def _convert_predicate(p):
+    operators = {
+        '=': operator.eq,
+        '<>': operator.ne,
+        '>': operator.gt,
+        '<': operator.lt,
+        '>=': operator.ge,
+        '<=': operator.le,
+        'BETWEEN': between,
+        'NOT BETWEEN': between,
+    }
+    return operators[p['operator']](column(p['attribute']), p['value'])
+
+
+def _to_clause(constraint):
+    if constraint is not None:
+        if isinstance(constraint, dict):
+            return and_(column(k) == v for k, v in constraint.items())
+        else:
+            return or_(and_(_convert_predicate(predicate)
+                            for predicate in conjunct)
+                       for conjunct in constraint)
+    else:
+        return None
+
+
 def get_data(engine, relation_name, attributes, constraint=None,
              order_by=None):
     """
@@ -166,12 +190,8 @@ def get_data(engine, relation_name, attributes, constraint=None,
     :param constraint: logical constraint
     :param order_by: list of attribute names to order result by
     """
-    if constraint:
-        whereclause = and_(column(k) == v for k, v in constraint.items())
-    else:
-        whereclause = None
     s = select(columns=map(column, attributes), from_obj=table(relation_name),
-               whereclause=whereclause, order_by=order_by)
+               whereclause=_to_clause(constraint), order_by=order_by)
     return _execute(engine, s)
 
 

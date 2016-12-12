@@ -151,7 +151,6 @@ def natural_join(engine, relations, attributes):
 
 
 def _convert_predicate(p):
-    negation = 'NOT'
     operators = {
         '=': operator.eq,
         '<>': operator.ne,
@@ -160,11 +159,11 @@ def _convert_predicate(p):
         '>=': operator.ge,
         '<=': operator.le,
         'BETWEEN': between,
-        negation + ' BETWEEN': between,
     }
-    value = (p['value'],) if not isinstance(p['value'], list) else p['value']
-    clause = operators[p['operator']](column(p['attribute']), *value)
-    if negation not in p['operator']:
+    op_str = p['operator'].lstrip('NOT ')
+    values = (p['value'],) if not isinstance(p['value'], list) else p['value']
+    clause = operators[op_str](column(p['attribute']), *values)
+    if op_str == p['operator']:
         return clause
     else:
         return not_(clause)

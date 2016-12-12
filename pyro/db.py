@@ -160,6 +160,7 @@ def _convert_predicate(p):
         '<=': operator.le,
         'BETWEEN': between,
         'IN': lambda column_clause, *values: column_clause.in_(values),
+        'LIKE': lambda column_clause, *values: column_clause.like(values),
     }
     op_str = p['operator'].lstrip('NOT ')
     values = (p['value'],) if not isinstance(p['value'], list) else p['value']

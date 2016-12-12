@@ -382,7 +382,7 @@ class TestToClause(DatabaseTestCase):
                 {'user_id': None, 'user_name': 'jack'},
                 {'user_id': 1, 'user_name': 'wendy'},
                 {'user_id': 4, 'user_name': 'brad'},
-                {'user_id': 5, 'user_name': 'allan'},
+                {'user_id': 5, 'user_name': 'breck'},
                 {'user_id': 6, 'user_name': 'chris'},
             ])
 
@@ -499,19 +499,33 @@ class TestToClause(DatabaseTestCase):
         self.assertNotIn({'user_id': 1}, rows)
         self.assertNotIn({'user_id': 4}, rows)
 
-    def test_conjunction_clause(self):
+    def test_simple_like(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': 'NOT IN',
-                        'value': [1, 2, 3, 4]}]]
+        constraint = [[{'attribute': 'user_name', 'operator': 'LIKE',
+                        'value': '%ck'}]]
 
-        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+        rows = db.get_data(self.engine, 'users', ['user_name'], constraint)
 
         self.assertEqual(len(rows), 2)
-        self.assertIn({'user_id': 5}, rows)
-        self.assertIn({'user_id': 6}, rows)
-        self.assertNotIn({'user_id': None}, rows)
-        self.assertNotIn({'user_id': 1}, rows)
-        self.assertNotIn({'user_id': 4}, rows)
+        self.assertIn({'user_name': 'jack'}, rows)
+        self.assertIn({'user_name': 'breck'}, rows)
+        self.assertNotIn({'user_name': 'wendy'}, rows)
+        self.assertNotIn({'user_name': 'brad'}, rows)
+        self.assertNotIn({'user_name': 'chris'}, rows)
+
+    def test_simple_not_like(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_name', 'operator': 'NOT LIKE',
+                        'value': 'b%'}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_name'], constraint)
+
+        self.assertEqual(len(rows), 3)
+        self.assertIn({'user_name': 'jack'}, rows)
+        self.assertIn({'user_name': 'chris'}, rows)
+        self.assertIn({'user_name': 'wendy'}, rows)
+        self.assertNotIn({'user_name': 'breck'}, rows)
+        self.assertNotIn({'user_name': 'brad'}, rows)
 
 
 class TestGetRows(DatabaseTestCase):

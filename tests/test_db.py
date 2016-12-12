@@ -470,6 +470,34 @@ class TestToClause(DatabaseTestCase):
         self.assertIn({'user_id': 6}, rows)
         self.assertNotIn({'user_id': None}, rows)
 
+    def test_simple_in(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': 'IN',
+                        'value': [1, 2, 3, 4]}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 1}, rows)
+        self.assertIn({'user_id': 4}, rows)
+        self.assertNotIn({'user_id': None}, rows)
+        self.assertNotIn({'user_id': 5}, rows)
+        self.assertNotIn({'user_id': 6}, rows)
+
+    def test_simple_not_in(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': 'NOT IN',
+                        'value': [1, 2, 3, 4]}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 5}, rows)
+        self.assertIn({'user_id': 6}, rows)
+        self.assertNotIn({'user_id': None}, rows)
+        self.assertNotIn({'user_id': 1}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+
 
 class TestGetRows(DatabaseTestCase):
     def test(self):

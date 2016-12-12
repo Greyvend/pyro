@@ -150,6 +150,10 @@ def natural_join(engine, relations, attributes):
     return _execute(engine, s)
 
 
+def in_(column_clause, *values):
+    return column_clause.in_(values)
+
+
 def _convert_predicate(p):
     operators = {
         '=': operator.eq,
@@ -159,6 +163,7 @@ def _convert_predicate(p):
         '>=': operator.ge,
         '<=': operator.le,
         'BETWEEN': between,
+        'IN': in_
     }
     op_str = p['operator'].lstrip('NOT ')
     values = (p['value'],) if not isinstance(p['value'], list) else p['value']

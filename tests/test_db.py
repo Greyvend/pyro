@@ -372,17 +372,18 @@ class TestToClause(DatabaseTestCase):
     def prepare_data(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
-                      Column('user_id', Integer))
+                      Column('user_id', Integer),
+                      Column('user_name', String(20)))
         metadata.create_all()
 
         # populate with data
         with self.engine.connect() as conn:
             conn.execute(users.insert(), [
-                {'user_id': None},
-                {'user_id': 1},
-                {'user_id': 4},
-                {'user_id': 5},
-                {'user_id': 6},
+                {'user_id': None, 'user_name': 'jack'},
+                {'user_id': 1, 'user_name': 'wendy'},
+                {'user_id': 4, 'user_name': 'brad'},
+                {'user_id': 5, 'user_name': 'allan'},
+                {'user_id': 6, 'user_name': 'chris'},
             ])
 
     def test_simple_eq(self):
@@ -485,6 +486,20 @@ class TestToClause(DatabaseTestCase):
         self.assertNotIn({'user_id': 6}, rows)
 
     def test_simple_not_in(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': 'NOT IN',
+                        'value': [1, 2, 3, 4]}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 5}, rows)
+        self.assertIn({'user_id': 6}, rows)
+        self.assertNotIn({'user_id': None}, rows)
+        self.assertNotIn({'user_id': 1}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+
+    def test_conjunction_clause(self):
         self.prepare_data()
         constraint = [[{'attribute': 'user_id', 'operator': 'NOT IN',
                         'value': [1, 2, 3, 4]}]]

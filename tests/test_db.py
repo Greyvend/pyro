@@ -372,12 +372,13 @@ class TestToClause(DatabaseTestCase):
     def prepare_data(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
-                      Column('user_id', Integer, primary_key=True))
+                      Column('user_id', Integer))
         metadata.create_all()
 
         # populate with data
         with self.engine.connect() as conn:
             conn.execute(users.insert(), [
+                {'user_id': None},
                 {'user_id': 1},
                 {'user_id': 4},
                 {'user_id': 5},
@@ -387,7 +388,6 @@ class TestToClause(DatabaseTestCase):
     def test_simple_eq(self):
         self.prepare_data()
         constraint = [[{'attribute': 'user_id', 'operator': '=', 'value': 4}]]
-
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
 
         self.assertEqual(len(rows), 1)
@@ -417,6 +417,32 @@ class TestToClause(DatabaseTestCase):
         self.assertIn({'user_id': 4}, rows)
         self.assertNotIn({'user_id': 5}, rows)
         self.assertNotIn({'user_id': 6}, rows)
+
+    def test_simple_between(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': 'BETWEEN',
+                        'value': [4, 5]}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 4}, rows)
+        self.assertIn({'user_id': 5}, rows)
+        self.assertNotIn({'user_id': 1}, rows)
+        self.assertNotIn({'user_id': 6}, rows)
+
+    def test_simple_not_between(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': 'NOT BETWEEN',
+                        'value': [4, 5]}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 1}, rows)
+        self.assertIn({'user_id': 6}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+        self.assertNotIn({'user_id': 5}, rows)
 
 
 class TestGetRows(DatabaseTestCase):

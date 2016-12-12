@@ -4,7 +4,7 @@ from functools import reduce
 
 from sqlalchemy import Column, Table, MetaData, select, column, delete, \
     distinct, insert, table
-from sqlalchemy.sql.elements import and_, or_, between
+from sqlalchemy.sql.elements import and_, or_, between, not_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
     LargeBinary
@@ -151,6 +151,7 @@ def natural_join(engine, relations, attributes):
 
 
 def _convert_predicate(p):
+    negation = 'NOT'
     operators = {
         '=': operator.eq,
         '<>': operator.ne,
@@ -159,9 +160,14 @@ def _convert_predicate(p):
         '>=': operator.ge,
         '<=': operator.le,
         'BETWEEN': between,
-        'NOT BETWEEN': between,
+        negation + ' BETWEEN': between,
     }
-    return operators[p['operator']](column(p['attribute']), p['value'])
+    value = (p['value'],) if not isinstance(p['value'], list) else p['value']
+    clause = operators[p['operator']](column(p['attribute']), *value)
+    if negation not in p['operator']:
+        return clause
+    else:
+        return not_(clause)
 
 
 def _to_clause(constraint):

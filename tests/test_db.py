@@ -527,6 +527,41 @@ class TestToClause(DatabaseTestCase):
         self.assertNotIn({'user_name': 'breck'}, rows)
         self.assertNotIn({'user_name': 'brad'}, rows)
 
+    def test_conjunction_clause(self):
+        self.prepare_data()
+        constraint = [[{'attribute': 'user_id', 'operator': 'NOT IN',
+                        'value': [1, 2, 3, 4]},
+                       {'attribute': 'user_name', 'operator': 'LIKE',
+                        'value': '%r%'}]]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 2)
+        self.assertIn({'user_id': 5}, rows)
+        self.assertIn({'user_id': 6}, rows)
+        self.assertNotIn({'user_id': None}, rows)
+        self.assertNotIn({'user_id': 1}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+
+    def test_disjunctive_normal_form(self):
+        self.prepare_data()
+        constraint = [
+            [{'attribute': 'user_id', 'operator': 'NOT IN',
+              'value': [1, 2, 3, 4]},
+             {'attribute': 'user_name', 'operator': 'LIKE', 'value': '%r%'}],
+            [{'attribute': 'user_id', 'operator': '<', 'value': 3},
+             {'attribute': 'user_name', 'operator': '=', 'value': 'wendy'}],
+        ]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 3)
+        self.assertIn({'user_id': 1}, rows)
+        self.assertIn({'user_id': 5}, rows)
+        self.assertIn({'user_id': 6}, rows)
+        self.assertNotIn({'user_id': None}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+
 
 class TestGetRows(DatabaseTestCase):
     def test(self):

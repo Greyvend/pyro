@@ -150,10 +150,6 @@ def natural_join(engine, relations, attributes):
     return _execute(engine, s)
 
 
-def in_(column_clause, *values):
-    return column_clause.in_(values)
-
-
 def _convert_predicate(p):
     operators = {
         '=': operator.eq,
@@ -163,7 +159,7 @@ def _convert_predicate(p):
         '>=': operator.ge,
         '<=': operator.le,
         'BETWEEN': between,
-        'IN': in_
+        'IN': lambda column_clause, *values: column_clause.in_(values),
     }
     op_str = p['operator'].lstrip('NOT ')
     values = (p['value'],) if not isinstance(p['value'], list) else p['value']
@@ -180,8 +176,8 @@ def _to_bool_clause(constraint):
             return and_(column(k) == v for k, v in constraint.items())
         else:
             return or_(and_(_convert_predicate(predicate)
-                            for predicate in clause)
-                       for clause in constraint)
+                            for predicate in conjunction_clause)
+                       for conjunction_clause in constraint)
     else:
         return None
 

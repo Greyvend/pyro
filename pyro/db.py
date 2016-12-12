@@ -167,21 +167,21 @@ def _convert_predicate(p):
     }
     op_str = p['operator'].lstrip('NOT ')
     values = (p['value'],) if not isinstance(p['value'], list) else p['value']
-    clause = operators[op_str](column(p['attribute']), *values)
+    binary_expr = operators[op_str](column(p['attribute']), *values)
     if op_str == p['operator']:
-        return clause
+        return binary_expr
     else:
-        return not_(clause)
+        return not_(binary_expr)
 
 
-def _to_clause(constraint):
+def _to_bool_clause(constraint):
     if constraint is not None:
         if isinstance(constraint, dict):
             return and_(column(k) == v for k, v in constraint.items())
         else:
             return or_(and_(_convert_predicate(predicate)
-                            for predicate in conjunct)
-                       for conjunct in constraint)
+                            for predicate in clause)
+                       for clause in constraint)
     else:
         return None
 
@@ -201,7 +201,7 @@ def get_data(engine, relation_name, attributes, constraint=None,
     :param order_by: list of attribute names to order result by
     """
     s = select(columns=map(column, attributes), from_obj=table(relation_name),
-               whereclause=_to_clause(constraint), order_by=order_by)
+               whereclause=_to_bool_clause(constraint), order_by=order_by)
     return _execute(engine, s)
 
 

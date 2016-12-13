@@ -5,7 +5,7 @@ from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
 
 from pyro import db
 from pyro.db import create_table, _transform_column_type, _execute, \
-    get_rows, delete_rows, insert_rows, get_data
+    get_rows, delete_rows, insert_rows, get_data, delete_unsatisfied
 from tests.alchemy import DatabaseTestCase
 
 
@@ -683,6 +683,38 @@ class TestDeleteRows(DatabaseTestCase):
         self.assertEqual(all_records[0]['user_name'], rows[0]['user_name'])
         self.assertEqual(all_records[0]['user_fullname'],
                          rows[0]['user_fullname'])
+
+
+class TestDeleteUnsatisfied(DatabaseTestCase):
+    def test(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        jack = {'user_name': 'jack', 'user_fullname': 'Jack Jones'}
+        wendy = {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+        chris = {'user_name': 'chris', 'user_fullname': 'Chris Kyle'}
+        rows = [jack, wendy, chris]
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), rows)
+
+        constraint = [[{'attribute': 'user_name', 'operator': 'LIKE',
+                        'value': 'j%'}],
+                      [{'attribute': 'user_name', 'operator': 'LIKE',
+                        'value': '%r%'}]]
+
+        delete_unsatisfied(self.engine, {'name': 'users'},
+                           constraint=constraint)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 2)
+        self.assertEqual(all_records[0]['user_name'], jack['user_name'])
+        self.assertEqual(all_records[1]['user_name'], chris['user_name'])
 
 
 class TestInsertRows(DatabaseTestCase):

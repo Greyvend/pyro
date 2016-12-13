@@ -224,6 +224,21 @@ def delete_rows(engine, relation, rows):
         _execute(engine, del_query)
 
 
+def delete_unsatisfied(engine, relation, constraint):
+    """
+    Delete rows that DO NOT satisfy the specified constraint.
+
+    :param engine: SQLAlchemy engine to be used
+    :param relation: relation to scan
+    :param constraint: logical constraint in DNF
+    :type constraint: list of lists of predicates. First list elems are joined
+        by disjunction, inner lists - by conjunction
+    """
+    whereclause = not_(_to_bool_clause(constraint))
+    del_query = delete(table(relation['name'])).where(whereclause)
+    _execute(engine, del_query)
+
+
 def insert_rows(engine, relation, rows):
     _rows = list(rows)
     if not _rows:

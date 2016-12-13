@@ -562,6 +562,23 @@ class TestToClause(DatabaseTestCase):
         self.assertNotIn({'user_id': None}, rows)
         self.assertNotIn({'user_id': 4}, rows)
 
+    def test_empty_conjunction_clause(self):
+        self.prepare_data()
+        constraint = [
+            [],
+            [{'attribute': 'user_id', 'operator': '<', 'value': 3},
+             {'attribute': 'user_name', 'operator': '=', 'value': 'wendy'}],
+        ]
+
+        rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
+
+        self.assertEqual(len(rows), 1)
+        self.assertIn({'user_id': 1}, rows)
+        self.assertNotIn({'user_id': None}, rows)
+        self.assertNotIn({'user_id': 4}, rows)
+        self.assertNotIn({'user_id': 5}, rows)
+        self.assertNotIn({'user_id': 6}, rows)
+
 
 class TestGetRows(DatabaseTestCase):
     def test(self):

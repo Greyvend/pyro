@@ -19,4 +19,4 @@ class TestProject(TestCase):
         self.assertEqual(len(projection), 3)
         self.assertEqual(projection[0], [])  # first sublist should be gone
         self.assertEqual(projection[1], [constraint[1][1]])
-        self.assertEqual(projection[2], constraint[1])
+        self.assertEqual(projection[2], constraint[2])

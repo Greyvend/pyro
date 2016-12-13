@@ -77,7 +77,7 @@ if __name__ == '__main__':
     for context in contexts:
         logging.info('Building Table of Joins for the context {}'.format(
             context))
-        tj.build(context, dependencies, source_engine, cube_engine)
+        tj.build(context, dependencies, [], source_engine, cube_engine)
 
     logging.info('The source Database has been successfully transformed to '
                  'OLAP representation!')

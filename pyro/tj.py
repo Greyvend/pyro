@@ -1,7 +1,10 @@
 from sqlalchemy import String
 
+from pyro import constraints
 from pyro import db
 from pyro.transformation import lossless_combinations
+from pyro.utils import all_attributes
+
 
 VECTOR_ATTRIBUTE = 'g'
 VECTOR_SEPARATOR = ','
@@ -124,12 +127,14 @@ def compose_tj_name(context):
     return 'TJ_' + '_'.join(sorted(r['name'] for r in context))
 
 
-def build(context, dependencies, source, cube):
+def build(context, dependencies, constraint, source, cube):
     """
     Build Table of Joins and write it to the destination DB
 
     :param context: list of relations representing context to use
     :param dependencies: list of dependencies held
+    :param constraint: logical constraint representation to be used
+    :type constraint: list of lists of dicts
     :param source: SQLAlchemy engine for source DB
     :param cube: SQLAlchemy engine for cube DB
     """
@@ -151,13 +156,15 @@ def build(context, dependencies, source, cube):
         join_data = db.natural_join(source, relations, attributes)
         # not using functional approach here to avoid data copying
         for row in join_data:
-            all_attributes = (str(sorted(r['attributes'].keys()))
-                              for r in sorted(relations,
-                                              key=lambda r: r['name']))
-            row[VECTOR_ATTRIBUTE] = VECTOR_SEPARATOR.join(all_attributes)
+            attributes_string = (str(sorted(r['attributes'].keys()))
+                                 for r in sorted(relations,
+                                                 key=lambda r: r['name']))
+            row[VECTOR_ATTRIBUTE] = VECTOR_SEPARATOR.join(attributes_string)
         tj_data = db.get_rows(cube, tj)
         rows_to_delete = filter_subordinate_rows(tj_data, join_data)
         db.delete_rows(cube, tj, rows_to_delete)
-        # TODO: join_data_filtered = filter(constraint, join_data)
-        # TODO: db.insert_rows(cube, tj, join_data_filtered)
         db.insert_rows(cube, tj, join_data)
+        projected_constraint = constraints.project(
+            constraint, all_attributes(relations))
+        if projected_constraint:
+            db.delete_unsatisfied(cube, tj, projected_constraint)

@@ -165,6 +165,7 @@ class TestBuild(DatabaseTestCase):
         r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
               'pk': {'C'}}
         dependencies = []
+        constraint = []
         source = self.engine
         cube = create_engine('sqlite://')  # additional in-memory DB for test
         metadata = MetaData(source, reflect=True)
@@ -177,8 +178,8 @@ class TestBuild(DatabaseTestCase):
               Column('D', Integer))
         metadata.create_all()
 
-        pyro.tj.build([r1, r2], dependencies, source, cube)
-        pyro.tj.build([r2, r1], dependencies, source, cube)
+        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        pyro.tj.build([r2, r1], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 1)
@@ -190,6 +191,7 @@ class TestBuild(DatabaseTestCase):
               'pk': {'A', 'B'}}
         r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
               'pk': {'C'}}
+        constraint = []
         dependencies = [{'left': {'C'}, 'right': {'D'}}]
         source = self.engine
         cube = create_engine('sqlite://')  # additional in-memory DB for test
@@ -203,7 +205,7 @@ class TestBuild(DatabaseTestCase):
               Column('D', Integer))
         metadata.create_all()
 
-        pyro.tj.build([r1, r2], dependencies, source, cube)
+        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 1)
@@ -220,6 +222,7 @@ class TestBuild(DatabaseTestCase):
               'pk': {'A', 'B'}}
         r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
               'pk': {'C'}}
+        constraint = []
         dependencies = [{'left': {'C'}, 'right': {'D'}}]
         source = self.engine
         cube = create_engine('sqlite://')  # additional in-memory DB for test
@@ -243,7 +246,7 @@ class TestBuild(DatabaseTestCase):
                 {'C': 33, 'D': 44}
             ])
 
-        pyro.tj.build([r1, r2], dependencies, source, cube)
+        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
         self.assertIn('TJ_R1_R2', metadata.tables)
@@ -270,6 +273,60 @@ class TestBuild(DatabaseTestCase):
         self.assertEqual(all_records[2]['D'], 4)
         self.assertEqual(all_records[2]['g'], "['A', 'B', 'C'],['C', 'D']")
 
+    def test_integration_with_data_and_constraint(self):
+        r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
+                                           'C': Integer},
+              'pk': {'A', 'B'}}
+        r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
+              'pk': {'C'}}
+        constraint = [
+            [{'attribute': 'D', 'operator': '>', 'value': 40}],
+            [{'attribute': 'D', 'operator': '=', 'value': 37.5}]
+        ]
+        dependencies = [{'left': {'C'}, 'right': {'D'}}]
+        source = self.engine
+        cube = create_engine('sqlite://')  # additional in-memory DB for test
+        metadata = MetaData(source, reflect=True)
+        t1 = Table('R1', metadata,
+                   Column('A', Integer, primary_key=True),
+                   Column('B', Integer, primary_key=True),
+                   Column('C', Integer))
+        t2 = Table('R2', metadata,
+                   Column('C', Integer, primary_key=True),
+                   Column('D', Integer))
+        metadata.create_all()
+        # populate with data
+        with source.connect() as conn:
+            conn.execute(t1.insert(), [
+                {'A': 1, 'B': 2, 'C': 3},
+                {'A': 1, 'B': 22, 'C': None}
+            ])
+            conn.execute(t2.insert(), [
+                {'C': 3, 'D': 4},
+                {'C': 33, 'D': 44}
+            ])
+
+        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+
+        metadata = MetaData(cube, reflect=True)
+        self.assertIn('TJ_R1_R2', metadata.tables)
+        with cube.connect() as conn:
+            tj = metadata.tables['TJ_R1_R2'].select()
+            res = conn.execute(tj)
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 2)
+        self.assertEqual(all_records[0]['A'], 1)
+        self.assertEqual(all_records[0]['B'], 22)
+        self.assertEqual(all_records[0]['C'], None)
+        self.assertEqual(all_records[0]['D'], None)
+        self.assertEqual(all_records[0]['g'], "['A', 'B', 'C']")
+
+        self.assertEqual(all_records[1]['A'], None)
+        self.assertEqual(all_records[1]['B'], None)
+        self.assertEqual(all_records[1]['C'], 33)
+        self.assertEqual(all_records[1]['D'], 44)
+        self.assertEqual(all_records[1]['g'], "['C', 'D']")
+
     def test_pseudocontext(self):
         """
         Check that in case with pseudocontexts the whole relation set is used
@@ -280,6 +337,7 @@ class TestBuild(DatabaseTestCase):
               'pk': {'A', 'B'}}
         r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
               'pk': {'C'}}
+        constraint = []
         dependencies = []
         source = self.engine
         cube = create_engine('sqlite://')  # additional in-memory DB for test
@@ -303,7 +361,7 @@ class TestBuild(DatabaseTestCase):
                 {'C': 33, 'D': 44}
             ])
 
-        pyro.tj.build([r1, r2], dependencies, source, cube)
+        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 1)

@@ -8,5 +8,7 @@ def project(constraint, attributes):
     :param attributes: list of attribute names to project to (X)
     :return: modified constraint
     """
-    return [[p for p in conjunction_clause if p['attribute'] in attributes]
-            for conjunction_clause in constraint]
+    projection = [[p for p in conjunction_clause if p['attribute']
+                   in attributes]
+                  for conjunction_clause in constraint]
+    return list(filter(None, projection))

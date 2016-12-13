@@ -4,7 +4,7 @@ from pyro.constraints import project
 
 
 class TestProject(TestCase):
-    def test(self):
+    def test_various(self):
         constraint = [
             [{'attribute': 'A1', 'operator': '>', 'value': 4}],
             [{'attribute': 'A1', 'operator': '=', 'value': 3},
@@ -16,7 +16,18 @@ class TestProject(TestCase):
 
         projection = project(constraint, attributes)
 
-        self.assertEqual(len(projection), 3)
-        self.assertEqual(projection[0], [])  # first sublist should be gone
-        self.assertEqual(projection[1], [constraint[1][1]])
-        self.assertEqual(projection[2], constraint[2])
+        self.assertEqual(len(projection), 2)  # first sublist should be gone
+        self.assertEqual(projection[0], [constraint[1][1]])
+        self.assertEqual(projection[1], constraint[2])
+
+    def test_empty(self):
+        constraint = [
+            [{'attribute': 'A1', 'operator': '>', 'value': 4}],
+            [{'attribute': 'A1', 'operator': '=', 'value': 3}]
+        ]
+        attributes = ['A2', 'A3']
+
+        projection = project(constraint, attributes)
+
+        self.assertEqual(len(projection), 0)
+        self.assertEqual(projection, [])

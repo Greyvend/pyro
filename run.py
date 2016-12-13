@@ -69,15 +69,20 @@ if __name__ == '__main__':
         app_context = assemble_list(contexts, key=lambda r: r['name'])
     contexts.append(app_context)
 
+    # get logical constraints
+    constraints = list(map(lambda d: d.get('constraint', []),
+                           config['dimensions']))
+    constraints.append([])  # no application constraint will be used
+
     # connect to the output DB
     logging.info('Connecting to the cube DB: {}'.format(
         config['cube_db']['database']))
     cube_engine = create_engine(URL(**config['cube_db']))
 
-    for context in contexts:
+    for context, constraint in zip(contexts, constraints):
         logging.info('Building Table of Joins for the context {}'.format(
             context))
-        tj.build(context, dependencies, [], source_engine, cube_engine)
+        tj.build(context, dependencies, constraint, source_engine, cube_engine)
 
     logging.info('The source Database has been successfully transformed to '
                  'OLAP representation!')

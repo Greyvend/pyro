@@ -1,0 +1,12 @@
+def project(constraint, attributes):
+    """
+    Perform F\X, a contraction projection. It means that from F\X(t) = TRUE it
+    follows that F(t) = TRUE, whereas the opposite might not hold.
+
+    :param constraint: logical constraint representation to be used (F)
+    :type constraint: list of lists of dicts
+    :param attributes: list of attribute names to project to (X)
+    :return: modified constraint
+    """
+    return [[p for p in conjunction_clause if p['attribute'] in attributes]
+            for conjunction_clause in constraint]

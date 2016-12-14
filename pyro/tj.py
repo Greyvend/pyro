@@ -168,3 +168,8 @@ def build(context, dependencies, constraint, source, cube):
             constraint, all_attributes(relations))
         if projected_constraint:
             db.delete_unsatisfied(cube, tj, projected_constraint)
+
+
+def clean(context, dimension, cube):
+    tj = {'name': compose_tj_name(context)}
+    db.delete_unsatisfied(cube, tj, constraints.not_null(dimension))

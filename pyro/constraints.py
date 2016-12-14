@@ -12,3 +12,8 @@ def project(constraint, attributes):
                    in attributes]
                   for conjunction_clause in constraint]
     return list(filter(None, projection))
+
+
+def not_null(attributes):
+    return [[{'attribute': a, 'operator': '<>', 'value': None}
+             for a in attributes]]

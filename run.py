@@ -31,7 +31,9 @@ if __name__ == '__main__':
            for dep in mvd]
     dependencies.extend(mvd)
 
-    # get measure
+    # get main attributes
+    dimension_attributes = [list(map(attribute_name, d['attributes']))
+                            for d in config['dimensions']]
     measure_relation = relation_name(config['measure'])
     measure_attribute = attribute_name(config['measure'])
 
@@ -79,16 +81,19 @@ if __name__ == '__main__':
         config['cube_db']['database']))
     cube_engine = create_engine(URL(**config['cube_db']))
 
-    for context, constraint in zip(contexts, constraints):
+    for context, constraint, dimension in zip(contexts, constraints,
+                                              dimension_attributes + [[]]):
         logging.info('Building Table of Joins for the context {}'.format(
             context))
         tj.build(context, dependencies, constraint, source_engine, cube_engine)
+        if dimension:
+            # clean new tj from the rows with empty/NULL values of dimension
+            # attributes
+            tj.clean(context, dimension, cube_engine)
 
     logging.info('The source Database has been successfully transformed to '
                  'OLAP representation!')
 
     logging.info('Writing the result table to the file')
-    dimensions = [list(map(attribute_name, d['attributes']))
-                  for d in config['dimensions']]
-    representation.create(cube_engine, contexts, dimensions,
+    representation.create(cube_engine, contexts, dimension_attributes,
                           measure_attribute, config['output_file'])

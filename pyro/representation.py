@@ -123,6 +123,8 @@ def _to_html(table, dimensions):
     table_tag = ['<table>']
     row_format = '<tr>{}</tr>'
     cell_format = '<td>{}</td>'
+    cell_header_format = '<th>{}</th>'
+    cell_measure_format = '<td class="measure">{}</td>'
     # section 1: build top header (Y part)
     cell_colspan_format = '<td colspan="{}">{}</td>'
     table_content = []
@@ -134,12 +136,17 @@ def _to_html(table, dimensions):
             if len(cell_group) > 1:
                 cell_str = cell_colspan_format.format(group_len, cell_group[0])
             else:
-                cell_str = cell_format.format(cell_group[0])
+                if cell_group[0] in dimensions[0]:
+                    _format = cell_header_format
+                else:
+                    _format = cell_format
+                cell_str = _format.format(cell_group[0])
             cell_list.append(cell_str)
         row_str = row_format.format(''.join(cell_list))
         table_content.append(row_str)
 
-    x_measure = (cell_format.format(c) for c in _table[len_y])
+    x_measure = (cell_header_format.format(c) if c in dimensions[1]
+                 else cell_measure_format.format(c) for c in _table[len_y])
     x_measure_row_str = row_format.format(''.join(x_measure))
     table_content.append(x_measure_row_str)
 

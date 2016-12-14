@@ -77,32 +77,30 @@ def _build(engine, contexts, dimensions, measure):
     relation_y_name = compose_tj_name(contexts[0])
     hierarchy_y = _get_hierarchy(engine, relation_y_name, dimensions[0])
     projection_y = db.project(engine, relation_y_name, hierarchy_y)
+    merged_projection_y = list(map(lambda g: g[0], groupby(projection_y)))
 
     # section 2: build side part of the header (X dimension)
     relation_x_name = compose_tj_name(contexts[1])
     hierarchy_x = _get_hierarchy(engine, relation_x_name, dimensions[1])
     projection_x = db.project(engine, relation_x_name, hierarchy_x)
+    merged_projection_x = list(map(lambda g: g[0], groupby(projection_x)))
 
     # section 3: build table body (Z block)
     relation_z_name = compose_tj_name(contexts[2])
     body = []
-    for row in projection_x:
-        # TODO: same_rows_amount = count_equal(projection_x, i), i - row index
-        # TODO: or just iterate over group_by(projection_x)
+    for row in merged_projection_x:
         body_row = []
-        for col in projection_y:
+        for col in merged_projection_y:
             where_dict = {**row, **col}
             data_rows = db.get_data(engine, relation_z_name, [measure],
                                     constraint=where_dict)
             cell = tuple(row[measure] for row in data_rows)
             body_row.append(cell)
-        # TODO: body_row.extend([body_row for x in range(same_rows_amount)])
-        # TODO: same story with columns
         body.append(body_row)
 
     # section 4: finally assemble all 3 parts into single table view
-    return _prettify(hierarchy_y, projection_y, hierarchy_x, projection_x,
-                     body, measure)
+    return _prettify(hierarchy_y, merged_projection_y, hierarchy_x,
+                     merged_projection_x, body, measure)
 
 
 def _group_cells(table, max_col):

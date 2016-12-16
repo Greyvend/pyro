@@ -106,8 +106,10 @@ class TestToHtml(TestCase):
         self.assertEqual(html.count('</table>'), 1)
         self.assertEqual(html.count('<tr>'), 6)
         self.assertEqual(html.count('</tr>'), 6)
-        self.assertEqual(html.count('<td>'), 6 * 4)
-        self.assertEqual(html.count('</td>'), 6 * 4)
+        self.assertEqual(html.count('<th'), 3)
+        self.assertEqual(html.count('</th>'), 3)
+        self.assertEqual(html.count('<td'), 6 * 4 - 3)
+        self.assertEqual(html.count('</td>'), 6 * 4 - 3)
 
     def test_col_spans(self):
         """
@@ -130,8 +132,10 @@ class TestToHtml(TestCase):
         self.assertEqual(html.count('</table>'), 1)
         self.assertEqual(html.count('<tr'), 4)
         self.assertEqual(html.count('</tr>'), 4)
-        self.assertEqual(html.count('<td'), 7 * 4 - 2)
-        self.assertEqual(html.count('</td>'), 7 * 4 - 2)
+        self.assertEqual(html.count('<th'), 3)
+        self.assertEqual(html.count('</th'), 3)
+        self.assertEqual(html.count('<td'), 7 * 4 - 2 - 3)
+        self.assertEqual(html.count('</td>'), 7 * 4 - 2 - 3)
 
     def test_row_spans(self):
         """
@@ -158,5 +162,7 @@ class TestToHtml(TestCase):
         self.assertEqual(html.count('</table>'), 1)
         self.assertEqual(html.count('<tr>'), 9)
         self.assertEqual(html.count('</tr>'), 9)
-        self.assertEqual(html.count('<td'), 9 * 5 - 2 - 1 - 2)
-        self.assertEqual(html.count('</td>'), 9 * 5 - 2 - 1 - 2)
+        self.assertEqual(html.count('<th'), 4)
+        self.assertEqual(html.count('</th>'), 4)
+        self.assertEqual(html.count('<td'), 9 * 5 - 2 - 1 - 2 - 4)
+        self.assertEqual(html.count('</td>'), 9 * 5 - 2 - 1 - 2 - 4)

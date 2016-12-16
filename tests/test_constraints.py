@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from pyro.constraints import project
+from pyro.constraints.operations import project
 
 
 class TestProject(TestCase):

@@ -1,6 +1,7 @@
 from sqlalchemy import String
 
-from pyro import constraints
+from pyro.constraints import utils as constraint_utils
+from pyro.constraints import operations as constraint_operations
 from pyro import db
 from pyro.transformation import lossless_combinations
 from pyro.utils import all_attributes
@@ -164,7 +165,7 @@ def build(context, dependencies, constraint, source, cube):
         rows_to_delete = filter_subordinate_rows(tj_data, join_data)
         db.delete_rows(cube, tj, rows_to_delete)
         db.insert_rows(cube, tj, join_data)
-        projected_constraint = constraints.project(
+        projected_constraint = constraint_operations.project(
             constraint, all_attributes(relations))
         if projected_constraint:
             db.delete_unsatisfied(cube, tj, projected_constraint)
@@ -172,4 +173,4 @@ def build(context, dependencies, constraint, source, cube):
 
 def clean(context, dimension, cube):
     tj = {'name': compose_tj_name(context)}
-    db.delete_unsatisfied(cube, tj, constraints.not_null(dimension))
+    db.delete_unsatisfied(cube, tj, constraint_utils.not_null(dimension))

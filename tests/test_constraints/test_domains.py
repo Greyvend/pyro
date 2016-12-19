@@ -75,6 +75,7 @@ class TestPoint(TestCase):
         self.assertFalse(point_1 == point_3)
         self.assertFalse(point_1 == inf)
         self.assertFalse(point_1 == minus_inf)
+        self.assertFalse(minus_inf == inf)
 
     def test_lt_numbers(self):
         point_1 = Point(1)
@@ -95,6 +96,8 @@ class TestPoint(TestCase):
         self.assertTrue(minus_inf < point_3)
         self.assertTrue(minus_inf < inf)
         self.assertFalse(inf < minus_inf)
+        self.assertFalse(inf < inf)
+        self.assertFalse(minus_inf < minus_inf)
 
     def test_lt_dates(self):
         point_1 = Point(datetime(2016, 9, 16, 21, 18))

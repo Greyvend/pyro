@@ -1,5 +1,6 @@
 from datetime import datetime
 from unittest import TestCase
+import math
 
 from pyro.constraints.domains import Point
 
@@ -74,3 +75,59 @@ class TestPoint(TestCase):
         upper = Point(33.5)
 
         self.assertTrue(point._contains_interval(lower, upper))
+
+    def test_eq_numbers(self):
+        point_1 = Point(1)
+        point_2 = Point(1.0)
+        point_3 = Point(1.5)
+        inf = Point(math.inf)
+        minus_inf = Point(-math.inf)
+
+        self.assertTrue(point_1 == point_1)
+        self.assertTrue(point_1 == point_2)
+        self.assertFalse(point_1 != point_2)
+        self.assertFalse(point_1 == point_3)
+        self.assertFalse(point_1 == inf)
+        self.assertFalse(point_1 == minus_inf)
+
+    def test_lt_numbers(self):
+        point_1 = Point(1)
+        point_2 = Point(-1.5)
+        point_3 = Point(1.33333)
+        inf = Point(math.inf)
+        minus_inf = Point(-math.inf)
+
+        self.assertFalse(point_1 < point_1)
+        self.assertFalse(point_1 < point_2)
+        self.assertTrue(point_1 < point_3)
+        self.assertTrue(point_1 < inf)
+        self.assertTrue(point_2 < inf)
+        self.assertTrue(point_3 < inf)
+        self.assertFalse(point_1 < minus_inf)
+        self.assertTrue(minus_inf < point_1)
+        self.assertTrue(minus_inf < point_2)
+        self.assertTrue(minus_inf < point_3)
+        self.assertTrue(minus_inf < inf)
+        self.assertFalse(inf < minus_inf)
+
+    def test_le_numbers(self):
+        point_1 = Point(1)
+        point_2 = Point(1.0)
+        point_3 = Point(1.5)
+        inf = Point(math.inf)
+        minus_inf = Point(-math.inf)
+
+        self.assertTrue(point_1 <= point_1)
+        self.assertTrue(point_1 <= point_2)
+        self.assertTrue(point_2 <= point_1)
+        self.assertTrue(point_1 <= point_3)
+        self.assertFalse(point_3 <= point_1)
+        self.assertTrue(point_1 <= inf)
+        self.assertTrue(point_2 <= inf)
+        self.assertTrue(point_3 <= inf)
+        self.assertFalse(point_1 <= minus_inf)
+        self.assertTrue(minus_inf <= point_1)
+        self.assertTrue(minus_inf <= point_2)
+        self.assertTrue(minus_inf <= point_3)
+        self.assertTrue(minus_inf <= inf)
+        self.assertFalse(inf <= minus_inf)

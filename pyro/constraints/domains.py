@@ -1,3 +1,6 @@
+import math
+
+
 class Domain:
     def issubset(self, other):
         return NotImplementedError()
@@ -28,3 +31,14 @@ class Point(Domain):
         same_value = lower_boundary.value == upper_boundary.value == self.value
         not_deleted = not (lower_boundary.deleted or upper_boundary.deleted)
         return same_value and not_deleted
+
+    def __eq__(self, other):
+        return self.value == other.value
+
+    def __lt__(self, other):
+        if self.value == -math.inf or other.value == math.inf:
+            return True
+        return self.value < other.value
+
+    def __le__(self, other):
+        return self < other or self == other

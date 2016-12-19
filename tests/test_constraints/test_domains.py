@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest import TestCase
 import math
 
-from pyro.constraints.domains import Point, Interval
+from pyro.constraints.domains import Point, Interval, Set
 
 
 class TestPoint(TestCase):
@@ -40,27 +40,6 @@ class TestPoint(TestCase):
         self.assertTrue(point_1.issubset(point_2))
         self.assertTrue(point_2.issubset(point_1))
         self.assertFalse(point_1.issubset(point_3))
-
-    def test_contains_interval_simple_included(self):
-        point = Point(33.5)
-        lower = Point(30.0)
-        upper = Point(66.5)
-
-        self.assertFalse(point._contains_interval(lower, upper))
-
-    def test_contains_interval_simple_border(self):
-        point = Point(33.5)
-        lower = Point(33.5)
-        upper = Point(66.5)
-
-        self.assertFalse(point._contains_interval(lower, upper))
-
-    def test_contains_interval_point(self):
-        point = Point(33.5)
-        lower = Point(33.5)
-        upper = Point(33.5)
-
-        self.assertTrue(point._contains_interval(lower, upper))
 
     def test_eq_numbers(self):
         point_1 = Point(1)
@@ -231,3 +210,30 @@ class TestInterval(TestCase):
         self.assertFalse(interval._contains_elements([datetime(2016, 3, 15),
                                                       datetime(2016, 10, 19),
                                                       datetime(2016, 7, 1)]))
+
+
+class TestSet(TestCase):
+    def test_issubset_numbers(self):
+        set_1 = Set([-1, 2, 3, 8, 15])
+        set_2 = Set([2, 44, 8, 3, -1, 15, 55.5])
+        set_3 = Set([-1, 3, 8, 15])
+
+        self.assertTrue(set_1.issubset(set_2))
+        self.assertFalse(set_2.issubset(set_1))
+        self.assertFalse(set_1.issubset(set_3))
+        self.assertTrue(set_3.issubset(set_1))
+        self.assertTrue(set_3.issubset(set_2))
+
+    def test_integration(self):
+        set_1 = Set([1, 2, 3, 4, 5])
+        interval_1 = Interval(lower=1, upper=5)
+        point_1 = Point(3)
+        point_2 = Point(3.54)
+        inf = Point(math.inf)
+
+        self.assertFalse(interval_1.issubset(set_1))
+        self.assertTrue(set_1.issubset(interval_1))
+        self.assertTrue(point_1.issubset(set_1))
+        self.assertFalse(set_1.issubset(point_1))
+        self.assertFalse(point_2.issubset(set_1))
+        self.assertFalse(inf.issubset(set_1))

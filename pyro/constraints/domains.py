@@ -26,9 +26,7 @@ class Point(Domain):
 
     def _contains_interval(self, lower_point, upper_point, lower_deleted=False,
                            upper_deleted=False):
-        same_value = lower_point.value == upper_point.value == self.value
-        not_deleted = not (lower_deleted or upper_deleted)
-        return same_value and not_deleted
+        return False
 
     def __eq__(self, other):
         return self.value == other.value
@@ -83,3 +81,21 @@ class Interval(Domain):
                 not upper_deleted:
             return False
         return True
+
+
+class Set(Domain):
+    """
+    Class representing a finite set of values for any supported data type.
+    """
+    def __init__(self, elements):
+        self.elements = set(elements)
+
+    def issubset(self, other):
+        return other._contains_elements(self.elements)
+
+    def _contains_elements(self, elements):
+        return self.elements.issuperset(set(elements))
+
+    def _contains_interval(self, lower_point, upper_point, lower_deleted=False,
+                           upper_deleted=False):
+        return False

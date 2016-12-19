@@ -44,3 +44,42 @@ class Point(Domain):
 
     def __le__(self, other):
         return self < other or self == other
+
+
+class Interval(Domain):
+    """
+    Class representing a mathematical interval for ordered types, such as
+    ints, floats, dates & times.
+
+    Intervals can be open and closed (sectors). The inclusion of the borders
+    is controlled by `lower_deleted` and `upper_deleted` parameters on
+    construction.
+    """
+    def __init__(self, lower=None, upper=None, lower_deleted=False,
+                 upper_deleted=False):
+        self.lower = Point(lower) if lower is not None else Point(-math.inf)
+        self.lower_deleted = lower_deleted
+        self.upper = Point(upper) if upper is not None else Point(math.inf)
+        self.upper_deleted = upper_deleted
+
+    def issubset(self, other):
+        return other._contains_interval(self.lower, self.upper,
+                                        self.lower_deleted, self.upper_deleted)
+
+    def _contains_elements(self, elements):
+        return self._contains_interval(Point(min(elements)),
+                                       Point(max(elements)))
+
+    def _contains_interval(self, lower_point, upper_point, lower_deleted=False,
+                           upper_deleted=False):
+        if self.lower > lower_point:
+            return False
+        if self.lower == lower_point and self.lower_deleted and \
+                not lower_deleted:
+            return False
+        if self.upper < upper_point:
+            return False
+        if self.upper == upper_point and self.upper_deleted and \
+                not upper_deleted:
+            return False
+        return True

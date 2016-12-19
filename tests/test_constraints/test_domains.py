@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest import TestCase
 import math
 
-from pyro.constraints.domains import Point
+from pyro.constraints.domains import Point, Interval
 
 
 class TestPoint(TestCase):
@@ -136,3 +136,98 @@ class TestPoint(TestCase):
         self.assertTrue(minus_inf <= point_3)
         self.assertTrue(minus_inf <= inf)
         self.assertFalse(inf <= minus_inf)
+
+
+class TestInterval(TestCase):
+    def test_construction(self):
+        interval_1 = Interval(lower=0, upper=10, lower_deleted=True)
+
+        self.assertEqual(interval_1.lower, Point(0))
+        self.assertTrue(interval_1.lower_deleted)
+        self.assertEqual(interval_1.upper, Point(10))
+        self.assertFalse(interval_1.upper_deleted)
+
+        interval_2 = Interval(lower=0)
+
+        self.assertEqual(interval_2.lower, Point(0))
+        self.assertEqual(interval_2.upper, Point(math.inf))
+
+        interval_3 = Interval(upper=10)
+
+        self.assertEqual(interval_3.upper, Point(10))
+        self.assertEqual(interval_3.lower, Point(-math.inf))
+
+    def test_issubset_sectors_numbers(self):
+        interval_1 = Interval(lower=0, upper=10)
+        interval_2 = Interval(lower=0, upper=10)
+        interval_3 = Interval(lower=0, upper=9)
+        interval_4 = Interval(lower=1, upper=10)
+        interval_5 = Interval(lower=0)
+        interval_6 = Interval(lower=1)
+        interval_7 = Interval(upper=10)
+        interval_8 = Interval(upper=9.5)
+
+        self.assertTrue(interval_1.issubset(interval_1))
+        self.assertTrue(interval_1.issubset(interval_2))
+        self.assertFalse(interval_1.issubset(interval_3))
+        self.assertTrue(interval_3.issubset(interval_1))
+        self.assertFalse(interval_1.issubset(interval_4))
+        self.assertTrue(interval_4.issubset(interval_1))
+        self.assertTrue(interval_1.issubset(interval_5))
+        self.assertFalse(interval_5.issubset(interval_1))
+        self.assertFalse(interval_1.issubset(interval_6))
+        self.assertFalse(interval_6.issubset(interval_1))
+        self.assertFalse(interval_5.issubset(interval_6))
+        self.assertTrue(interval_6.issubset(interval_5))
+        self.assertTrue(interval_1.issubset(interval_7))
+        self.assertFalse(interval_7.issubset(interval_1))
+        self.assertFalse(interval_1.issubset(interval_8))
+        self.assertFalse(interval_8.issubset(interval_1))
+
+    def test_issubset_open_intervals_numbers(self):
+        interval_1 = Interval(lower=0, upper=10,  lower_deleted=True)
+        interval_2 = Interval(lower=0, upper=10)
+        interval_3 = Interval(lower=0, upper=10, upper_deleted=True)
+        interval_4 = Interval(lower=0, upper=10, lower_deleted=True,
+                              upper_deleted=True)
+
+        self.assertTrue(interval_1.issubset(interval_2))
+        self.assertFalse(interval_2.issubset(interval_1))
+        self.assertFalse(interval_2.issubset(interval_3))
+        self.assertTrue(interval_3.issubset(interval_2))
+        # test fully open interval
+        self.assertTrue(interval_4.issubset(interval_1))
+        self.assertTrue(interval_4.issubset(interval_2))
+        self.assertTrue(interval_4.issubset(interval_3))
+        self.assertFalse(interval_1.issubset(interval_4))
+        self.assertFalse(interval_2.issubset(interval_4))
+        self.assertFalse(interval_3.issubset(interval_4))
+
+    def test_issubset_datetimes(self):
+        interval_1 = Interval(lower=datetime(2016, 9, 16, 21, 18),
+                              upper=datetime(2016, 10, 19, 21, 18))
+        interval_2 = Interval(lower=datetime(2016, 9, 16, 21, 18))
+
+        self.assertTrue(interval_1.issubset(interval_2))
+        self.assertFalse(interval_2.issubset(interval_1))
+
+    def test_contains_elements_numbers(self):
+        interval = Interval(lower=0, upper=10)
+
+        self.assertTrue(interval._contains_elements([0, 2, 10.0, 3, 7.5]))
+        self.assertFalse(interval._contains_elements([-7, 2, 10, 3, 7.5]))
+        self.assertFalse(interval._contains_elements([0, 2, 19]))
+
+    def test_contains_elements_dates(self):
+        interval = Interval(lower=datetime(2016, 3, 15),
+                            upper=datetime(2016, 9, 22))
+
+        self.assertTrue(interval._contains_elements([datetime(2016, 3, 15),
+                                                     datetime(2016, 4, 19),
+                                                     datetime(2016, 7, 1)]))
+        self.assertFalse(interval._contains_elements([datetime(2016, 3, 14),
+                                                      datetime(2016, 4, 19),
+                                                      datetime(2016, 7, 1)]))
+        self.assertFalse(interval._contains_elements([datetime(2016, 3, 15),
+                                                      datetime(2016, 10, 19),
+                                                      datetime(2016, 7, 1)]))

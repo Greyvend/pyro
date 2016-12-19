@@ -9,14 +9,11 @@ class TestPoint(TestCase):
     def test_issubset_other_point_number(self):
         point_1 = Point(33.5)
         point_2 = Point(66.5)
-        point_3 = Point(33.5, deleted=True)
         point_4 = Point(33.50)
 
         self.assertTrue(point_1.issubset(point_1))
         self.assertFalse(point_1.issubset(point_2))
         self.assertFalse(point_2.issubset(point_1))
-        self.assertRaises(AssertionError, point_1.issubset, point_3)
-        self.assertRaises(AssertionError, point_3.issubset, point_1)
         self.assertTrue(point_1.issubset(point_4))
         self.assertTrue(point_4.issubset(point_1))
 
@@ -53,19 +50,8 @@ class TestPoint(TestCase):
 
     def test_contains_interval_simple_border(self):
         point = Point(33.5)
-        lower = Point(33.5, deleted=True)
+        lower = Point(33.5)
         upper = Point(66.5)
-
-        self.assertFalse(point._contains_interval(lower, upper))
-
-        lower.deleted = False
-
-        self.assertFalse(point._contains_interval(lower, upper))
-
-    def test_contains_interval_point_deleted(self):
-        point = Point(33.5)
-        lower = Point(33.5, deleted=True)
-        upper = Point(33.5, deleted=True)
 
         self.assertFalse(point._contains_interval(lower, upper))
 
@@ -107,6 +93,22 @@ class TestPoint(TestCase):
         self.assertTrue(minus_inf < point_1)
         self.assertTrue(minus_inf < point_2)
         self.assertTrue(minus_inf < point_3)
+        self.assertTrue(minus_inf < inf)
+        self.assertFalse(inf < minus_inf)
+
+    def test_lt_dates(self):
+        point_1 = Point(datetime(2016, 9, 16, 21, 18))
+        point_2 = Point(datetime(2016, 12, 16, 21, 18))
+        inf = Point(math.inf)
+        minus_inf = Point(-math.inf)
+
+        self.assertFalse(point_1 < point_1)
+        self.assertTrue(point_1 < point_2)
+        self.assertTrue(point_1 < inf)
+        self.assertTrue(point_2 < inf)
+        self.assertFalse(point_1 < minus_inf)
+        self.assertTrue(minus_inf < point_1)
+        self.assertTrue(minus_inf < point_2)
         self.assertTrue(minus_inf < inf)
         self.assertFalse(inf < minus_inf)
 

@@ -257,6 +257,31 @@ class TestPunctuatedDomain(TestCase):
         self.assertTrue(domain_1.issubset(domain_2))
         self.assertFalse(domain_1.issubset(domain_3))
 
+    def test_integration(self):
+        domain_1 = PunctuatedDomain(3)
+        point_1 = Point(3)
+        point_2 = Point(3.54)
+        set_1 = Set([1, 2, 3, 4, 5])
+        set_2 = Set([1, 2, 3.65, 4, 5])
+        interval_1 = Interval(lower=1, upper=5)
+        interval_2 = Interval(lower=3, upper=5, lower_deleted=True)
+        interval_3 = Interval(lower=3, upper=5)
+        interval_4 = Interval(upper=3, upper_deleted=True)
+        interval_5 = Interval(upper=3)
+        interval_6 = Interval(lower=7)
+
+        self.assertFalse(point_1.issubset(domain_1))
+        self.assertTrue(point_2.issubset(domain_1))
+        self.assertFalse(domain_1.issubset(set_1))
+        self.assertFalse(set_1.issubset(domain_1))
+        self.assertFalse(domain_1.issubset(set_2))
+        self.assertFalse(interval_1.issubset(domain_1))
+        self.assertTrue(interval_2.issubset(domain_1))
+        self.assertFalse(interval_3.issubset(domain_1))
+        self.assertTrue(interval_4.issubset(domain_1))
+        self.assertFalse(interval_5.issubset(domain_1))
+        self.assertTrue(interval_6.issubset(domain_1))
+
 
 class TestPattern(TestCase):
     def test_issubset_numbers(self):

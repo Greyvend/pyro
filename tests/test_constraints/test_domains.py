@@ -2,7 +2,8 @@ from datetime import datetime
 from unittest import TestCase
 import math
 
-from pyro.constraints.domains import Point, Interval, Set, PunctuatedDomain
+from pyro.constraints.domains import Point, Interval, Set, PunctuatedDomain, \
+    Pattern
 
 
 class TestPoint(TestCase):
@@ -255,3 +256,28 @@ class TestPunctuatedDomain(TestCase):
 
         self.assertTrue(domain_1.issubset(domain_2))
         self.assertFalse(domain_1.issubset(domain_3))
+
+
+class TestPattern(TestCase):
+    def test_issubset_numbers(self):
+        pattern_1 = Pattern('abc')
+        pattern_2 = Pattern('abc')
+        pattern_3 = Pattern('%abc%')
+
+        self.assertTrue(pattern_1.issubset(pattern_2))
+        self.assertFalse(pattern_1.issubset(pattern_3))
+        self.assertFalse(pattern_3.issubset(pattern_1))
+
+    def test_integration(self):
+        pattern_1 = Pattern('abc')
+        point_1 = Point('abc')
+        set_1 = Set(['abc', 'cad', 'ddd'])
+        punctuated_1 = PunctuatedDomain('abc')
+        punctuated_2 = PunctuatedDomain('abcd')
+
+        self.assertTrue(pattern_1.issubset(point_1))
+        self.assertTrue(point_1.issubset(pattern_1))
+        self.assertTrue(pattern_1.issubset(set_1))
+        self.assertFalse(set_1.issubset(pattern_1))
+        self.assertFalse(pattern_1.issubset(punctuated_1))
+        self.assertTrue(pattern_1.issubset(punctuated_2))

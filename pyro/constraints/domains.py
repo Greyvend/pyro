@@ -126,3 +126,24 @@ class PunctuatedDomain(Domain):
                                                                 lower_deleted,
                                                                 upper_deleted)
         return lower_contains or upper_contains
+
+
+class Pattern(Domain):
+    """
+    Class representing a regular expression. Acts as SQL LIKE operation
+    abstraction.
+
+    At the moment only direct comparisons are available for regular
+    expressions.
+    """
+    def __init__(self, regexp):
+        self.regexp = regexp
+
+    def issubset(self, other):
+        return other._contains_elements([self.regexp])
+
+    # noinspection PySetFunctionToLiteral
+    def _contains_elements(self, elements):
+        # TODO: it can be achieved by using algorithms described here:
+        # http://stackoverflow.com/questions/18729015/determining-whether-a-regex-is-a-subset-of-another
+        return set([self.regexp]) == set(elements)

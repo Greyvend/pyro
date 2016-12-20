@@ -99,3 +99,30 @@ class Set(Domain):
     def _contains_interval(self, lower_point, upper_point, lower_deleted=False,
                            upper_deleted=False):
         return False
+
+
+class PunctuatedDomain(Domain):
+    def __init__(self, deleted_point):
+        self.deleted_point = deleted_point
+        self.lower_interval = Interval(-math.inf, deleted_point,
+                                       upper_deleted=True)
+        self.upper_interval = Interval(deleted_point, math.inf,
+                                       lower_deleted=True)
+
+    def issubset(self, other):
+        lower_issubset = self.lower_interval.issubset(other)
+        upper_issubset = self.upper_interval.issubset(other)
+        return lower_issubset and upper_issubset
+
+    def _contains_elements(self, elements):
+        return self.deleted_point not in elements
+
+    def _contains_interval(self, lower, upper, lower_deleted=False,
+                           upper_deleted=False):
+        lower_contains = self.lower_interval._contains_interval(lower, upper,
+                                                                lower_deleted,
+                                                                upper_deleted)
+        upper_contains = self.upper_interval._contains_interval(lower, upper,
+                                                                lower_deleted,
+                                                                upper_deleted)
+        return lower_contains or upper_contains

@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest import TestCase
 import math
 
-from pyro.constraints.domains import Point, Interval, Set
+from pyro.constraints.domains import Point, Interval, Set, PunctuatedDomain
 
 
 class TestPoint(TestCase):
@@ -237,3 +237,21 @@ class TestSet(TestCase):
         self.assertFalse(set_1.issubset(point_1))
         self.assertFalse(point_2.issubset(set_1))
         self.assertFalse(inf.issubset(set_1))
+
+
+class TestPunctuatedDomain(TestCase):
+    def test_issubset_numbers(self):
+        domain_1 = PunctuatedDomain(-1)
+        domain_2 = PunctuatedDomain(-1)
+        domain_3 = PunctuatedDomain(6.77)
+
+        self.assertTrue(domain_1.issubset(domain_2))
+        self.assertFalse(domain_1.issubset(domain_3))
+
+    def test_issubset_strings(self):
+        domain_1 = PunctuatedDomain('cutted out string')
+        domain_2 = PunctuatedDomain('cutted out string')
+        domain_3 = PunctuatedDomain('some other string')
+
+        self.assertTrue(domain_1.issubset(domain_2))
+        self.assertFalse(domain_1.issubset(domain_3))

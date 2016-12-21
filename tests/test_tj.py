@@ -280,8 +280,8 @@ class TestBuild(DatabaseTestCase):
         r2 = {'name': 'R2', 'attributes': {'C': Integer, 'D': Integer},
               'pk': {'C'}}
         constraint = [
-            [{'attribute': 'D', 'operator': '>', 'value': 40}],
-            [{'attribute': 'D', 'operator': '=', 'value': 37.5}]
+            [{'attribute': 'D', 'operation': '>', 'value': 40}],
+            [{'attribute': 'D', 'operation': '=', 'value': 37.5}]
         ]
         dependencies = [{'left': {'C'}, 'right': {'D'}}]
         source = self.engine

@@ -162,10 +162,10 @@ def _convert_predicate(p):
         'IN': lambda column_clause, *values: column_clause.in_(values),
         'LIKE': lambda column_clause, *values: column_clause.like(values),
     }
-    op_str = p['operator'].lstrip('NOT ')
+    op_str = p['operation'].lstrip('NOT ')
     values = (p['value'],) if not isinstance(p['value'], list) else p['value']
     binary_expr = operators[op_str](column(p['attribute']), *values)
-    if op_str == p['operator']:
+    if op_str == p['operation']:
         return binary_expr
     else:
         return not_(binary_expr)

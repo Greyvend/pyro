@@ -6,11 +6,11 @@ from pyro.constraints.operations import project
 class TestProject(TestCase):
     def test_various(self):
         constraint = [
-            [{'attribute': 'A1', 'operator': '>', 'value': 4}],
-            [{'attribute': 'A1', 'operator': '=', 'value': 3},
-             {'attribute': 'A2', 'operator': '<', 'value': 179}],
-            [{'attribute': 'A2', 'operator': '<>', 'value': 16},
-             {'attribute': 'A3', 'operator': '<=', 'value': 13}]
+            [{'attribute': 'A1', 'operation': '>', 'value': 4}],
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179}],
+            [{'attribute': 'A2', 'operation': '<>', 'value': 16},
+             {'attribute': 'A3', 'operation': '<=', 'value': 13}]
         ]
         attributes = ['A2', 'A3']
 
@@ -22,8 +22,8 @@ class TestProject(TestCase):
 
     def test_empty(self):
         constraint = [
-            [{'attribute': 'A1', 'operator': '>', 'value': 4}],
-            [{'attribute': 'A1', 'operator': '=', 'value': 3}]
+            [{'attribute': 'A1', 'operation': '>', 'value': 4}],
+            [{'attribute': 'A1', 'operation': '=', 'value': 3}]
         ]
         attributes = ['A2', 'A3']
 

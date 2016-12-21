@@ -388,7 +388,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_eq(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': '=', 'value': 4}]]
+        constraint = [[{'attribute': 'user_id', 'operation': '=', 'value': 4}]]
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
 
         self.assertEqual(len(rows), 1)
@@ -397,7 +397,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_gt(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': '>', 'value': 4}]]
+        constraint = [[{'attribute': 'user_id', 'operation': '>', 'value': 4}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
 
@@ -409,7 +409,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_le(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': '<=', 'value': 4}]]
+        constraint = [[{'attribute': 'user_id', 'operation': '<=', 'value': 4}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
 
@@ -421,7 +421,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_between(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': 'BETWEEN',
+        constraint = [[{'attribute': 'user_id', 'operation': 'BETWEEN',
                         'value': [4, 5]}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -434,7 +434,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_not_between(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': 'NOT BETWEEN',
+        constraint = [[{'attribute': 'user_id', 'operation': 'NOT BETWEEN',
                         'value': [4, 5]}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -447,7 +447,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_null_comparison(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': '=',
+        constraint = [[{'attribute': 'user_id', 'operation': '=',
                         'value': None}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -459,7 +459,7 @@ class TestToClause(DatabaseTestCase):
         self.assertNotIn({'user_id': 5}, rows)
         self.assertNotIn({'user_id': 6}, rows)
 
-        constraint = [[{'attribute': 'user_id', 'operator': '<>',
+        constraint = [[{'attribute': 'user_id', 'operation': '<>',
                         'value': None}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -473,7 +473,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_in(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': 'IN',
+        constraint = [[{'attribute': 'user_id', 'operation': 'IN',
                         'value': [1, 2, 3, 4]}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -487,7 +487,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_not_in(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': 'NOT IN',
+        constraint = [[{'attribute': 'user_id', 'operation': 'NOT IN',
                         'value': [1, 2, 3, 4]}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -501,7 +501,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_like(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_name', 'operator': 'LIKE',
+        constraint = [[{'attribute': 'user_name', 'operation': 'LIKE',
                         'value': '%ck'}]]
 
         rows = db.get_data(self.engine, 'users', ['user_name'], constraint)
@@ -515,7 +515,7 @@ class TestToClause(DatabaseTestCase):
 
     def test_simple_not_like(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_name', 'operator': 'NOT LIKE',
+        constraint = [[{'attribute': 'user_name', 'operation': 'NOT LIKE',
                         'value': 'b%'}]]
 
         rows = db.get_data(self.engine, 'users', ['user_name'], constraint)
@@ -529,9 +529,9 @@ class TestToClause(DatabaseTestCase):
 
     def test_conjunction_clause(self):
         self.prepare_data()
-        constraint = [[{'attribute': 'user_id', 'operator': 'NOT IN',
+        constraint = [[{'attribute': 'user_id', 'operation': 'NOT IN',
                         'value': [1, 2, 3, 4]},
-                       {'attribute': 'user_name', 'operator': 'LIKE',
+                       {'attribute': 'user_name', 'operation': 'LIKE',
                         'value': '%r%'}]]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -546,11 +546,11 @@ class TestToClause(DatabaseTestCase):
     def test_disjunctive_normal_form(self):
         self.prepare_data()
         constraint = [
-            [{'attribute': 'user_id', 'operator': 'NOT IN',
+            [{'attribute': 'user_id', 'operation': 'NOT IN',
               'value': [1, 2, 3, 4]},
-             {'attribute': 'user_name', 'operator': 'LIKE', 'value': '%r%'}],
-            [{'attribute': 'user_id', 'operator': '<', 'value': 3},
-             {'attribute': 'user_name', 'operator': '=', 'value': 'wendy'}],
+             {'attribute': 'user_name', 'operation': 'LIKE', 'value': '%r%'}],
+            [{'attribute': 'user_id', 'operation': '<', 'value': 3},
+             {'attribute': 'user_name', 'operation': '=', 'value': 'wendy'}],
         ]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -566,8 +566,8 @@ class TestToClause(DatabaseTestCase):
         self.prepare_data()
         constraint = [
             [],
-            [{'attribute': 'user_id', 'operator': '<', 'value': 3},
-             {'attribute': 'user_name', 'operator': '=', 'value': 'wendy'}],
+            [{'attribute': 'user_id', 'operation': '<', 'value': 3},
+             {'attribute': 'user_name', 'operation': '=', 'value': 'wendy'}],
         ]
 
         rows = db.get_data(self.engine, 'users', ['user_id'], constraint)
@@ -718,9 +718,9 @@ class TestDeleteUnsatisfied(DatabaseTestCase):
         with self.engine.connect() as conn:
             conn.execute(users.insert(), rows)
 
-        constraint = [[{'attribute': 'user_name', 'operator': 'LIKE',
+        constraint = [[{'attribute': 'user_name', 'operation': 'LIKE',
                         'value': 'j%'}],
-                      [{'attribute': 'user_name', 'operator': 'LIKE',
+                      [{'attribute': 'user_name', 'operation': 'LIKE',
                         'value': '%r%'}]]
 
         delete_unsatisfied(self.engine, {'name': 'users'},

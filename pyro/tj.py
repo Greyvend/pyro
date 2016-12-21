@@ -35,22 +35,17 @@ def get_attributes(context, dependencies):
 
 def encode_vector(relations):
     """
-    Serialize to string containing relation names.
-
-    Example:
-
-        relations = [{"name": "users"}, {"name": "addresses"},
-                     {"name": "payments"}, {"name": "pictures"}]
-
-    will return
-
-        "users,addresses,payments,pictures"
+    Serialize to string containing lists of all attribute names.
 
     :param relations: input relations
     :type relations: list of dicts
-    :return string encoding all relation names
+    :return string encoding all attributes present in all relations, with
+        relations sorted by their names
     """
-    return VECTOR_SEPARATOR.join(r['name'] for r in relations)
+    attribute_strings = (str(sorted(r['attributes'].keys()))
+                         for r in sorted(relations,
+                                         key=lambda r: r['name']))
+    return VECTOR_SEPARATOR.join(attribute_strings)
 
 
 def decode_vector(row):
@@ -153,14 +148,11 @@ def build(context, dependencies, constraint, source, cube):
     if context not in relations_packs:
         relations_packs.append(context)
     for relations in relations_packs:
-        # Execute JOIN of required source db tables
         join_data = db.natural_join(source, relations, attributes)
+        vector = encode_vector(relations)
         # not using functional approach here to avoid data copying
         for row in join_data:
-            attributes_string = (str(sorted(r['attributes'].keys()))
-                                 for r in sorted(relations,
-                                                 key=lambda r: r['name']))
-            row[VECTOR_ATTRIBUTE] = VECTOR_SEPARATOR.join(attributes_string)
+            row[VECTOR_ATTRIBUTE] = vector
         tj_data = db.get_rows(cube, tj)
         rows_to_delete = filter_subordinate_rows(tj_data, join_data)
         db.delete_rows(cube, tj, rows_to_delete)

@@ -13,17 +13,15 @@ from tests.alchemy import DatabaseTestCase
 class TestVectorSerialization(TestCase):
     def test_encode_vector(self):
         pyro.tj.VECTOR_SEPARATOR = ','
-        self.assertEqual(pyro.tj.encode_vector([{'name': 'users'},
-                                                {'name': 'addresses'},
-                                                {'name': 'payments'},
-                                                {'name': 'pictures'}]),
-                         'users,addresses,payments,pictures')
+        relations = [
+            {'name': 'R_1', 'attributes': {'A_1': 'INT', 'A_2': 'INT'}},
+            {'name': 'R_2', 'attributes': {'A_2': 'INT', 'A_3': 'INT'}},
+            {'name': 'R_3', 'attributes': {'A_3': 'INT', 'A_4': 'INT'}}]
+        self.assertEqual(pyro.tj.encode_vector(relations),
+                         "['A_1', 'A_2'],['A_2', 'A_3'],['A_3', 'A_4']")
         pyro.tj.VECTOR_SEPARATOR = '/'
-        self.assertEqual(pyro.tj.encode_vector([{'name': 'users'},
-                                                {'name': 'addresses'},
-                                                {'name': 'payments'},
-                                                {'name': 'pictures'}]),
-                         'users/addresses/payments/pictures')
+        self.assertEqual(pyro.tj.encode_vector(relations),
+                         "['A_1', 'A_2']/['A_2', 'A_3']/['A_3', 'A_4']")
 
     def test_decode_vector(self):
         pyro.tj.VECTOR_SEPARATOR = ','

@@ -3,7 +3,7 @@ from unittest import TestCase
 import math
 
 from pyro.constraints.domains import Point, Interval, Set, PunctuatedDomain, \
-    Pattern
+    Pattern, factory
 
 
 class TestPoint(TestCase):
@@ -306,3 +306,18 @@ class TestPattern(TestCase):
         self.assertFalse(set_1.issubset(pattern_1))
         self.assertFalse(pattern_1.issubset(punctuated_1))
         self.assertTrue(pattern_1.issubset(punctuated_2))
+
+
+class TestFactory(TestCase):
+    def test(self):
+        self.assertEqual(factory({'operation': '=', 'value': 1}), Point(1))
+        self.assertIsInstance(factory({'operation': '<>', 'value': 'g'}),
+                              PunctuatedDomain)
+        interval = factory({'operation': '<=', 'value': 1})
+        self.assertIsInstance(interval, Interval)
+        self.assertEqual(interval.lower.value, -math.inf)
+        self.assertEqual(interval.upper.value, 1)
+        interval_2 = factory({'operation': 'BETWEEN', 'value': [1, 15]})
+        self.assertIsInstance(interval_2, Interval)
+        self.assertEqual(interval_2.lower.value, 1)
+        self.assertEqual(interval_2.upper.value, 15)

@@ -147,3 +147,26 @@ class Pattern(Domain):
         # TODO: it can be achieved by using algorithms described here:
         # http://stackoverflow.com/questions/18729015/determining-whether-a-regex-is-a-subset-of-another
         return set([self.regexp]) == set(elements)
+
+
+def factory(predicate):
+    operation = predicate['operation']
+    value = predicate['value']
+    if operation == '=':
+        return Point(value)
+    if operation == '<>':
+        return PunctuatedDomain(value)
+    if operation == '>':
+        return Interval(lower=value, lower_deleted=True)
+    if operation == '>=':
+        return Interval(lower=value)
+    if operation == '<':
+        return Interval(upper=value, upper_deleted=True)
+    if operation == '<=':
+        return Interval(upper=value)
+    if operation == 'IN':
+        return Set(value)
+    if operation == 'BETWEEN':
+        return Interval(value[0], value[1])
+    if operation == 'LIKE':
+        return Pattern(value)

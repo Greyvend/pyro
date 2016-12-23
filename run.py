@@ -11,7 +11,6 @@ from pyro.utils import relation_name, assemble_list, attribute_name
 
 logging.basicConfig(level=logging.INFO)
 
-
 if __name__ == '__main__':
     with open('config.json') as config_file:
         config = json.load(config_file)
@@ -19,8 +18,7 @@ if __name__ == '__main__':
     # connect to source Database
     logging.info('Connecting to the source DB: {}'.format(
         config['source_db']['database']))
-    source_engine = create_engine(str(URL(**config['source_db'])) +
-                                  '?charset=utf8')
+    source_engine = create_engine(str(URL(**config['source_db'])))
 
     relations, dependencies = db.get_schema(source_engine)
 

@@ -5,7 +5,8 @@
         "port": 3306,
         "database": "database",
         "username": "username",
-        "password": "password"
+        "password": "password",
+        "query": {"charset": "utf8"}
     },
     "cube_db": {
         "drivername": "sqlite",
@@ -13,7 +14,12 @@
     },
     "test_db": {
         "drivername": "mysql+pymysql",
-        "database": "test_pyro"
+        "host": "localhost",
+        "port": 3306,
+        "database": "test_pyro",
+        "username": "username",
+        "password": "password",
+        "query": {"charset": "utf8"}
     },
     "multi valued dependencies": [],
     "dimensions": [

@@ -4,11 +4,12 @@ from pyro.constraints import utils as constraint_utils
 from pyro.constraints import operations as constraint_operations
 from pyro import db
 from pyro.transformation import lossless_combinations
-from pyro.utils import all_attributes
+from pyro.utils import all_attributes, process_value
 
 
 VECTOR_ATTRIBUTE = 'g'
-VECTOR_SEPARATOR = ','
+VECTOR_SEPARATOR = ';separator;'
+VECTOR_MAX_LENGTH = 10000
 
 
 def get_attributes(context, dependencies):
@@ -99,7 +100,9 @@ def is_subordinate(r1, r2):
     attributes = list(r1.keys())
     attributes.remove(VECTOR_ATTRIBUTE)
     for attr in attributes:
-        if r1[attr] != r2.get(attr) and not is_empty_attr(r1, attr):
+        value_1 = process_value(r1[attr])
+        value_2 = process_value(r2.get(attr))
+        if value_1 != value_2 and not is_empty_attr(r1, attr):
             return False
     return True
 
@@ -139,7 +142,7 @@ def build(context, dependencies, constraint, source, cube):
     attributes = get_attributes(context, dependencies)
     # add vector attribute holding information about participating relations
     full_schema = attributes.copy()
-    full_schema.update({VECTOR_ATTRIBUTE: String})
+    full_schema.update({VECTOR_ATTRIBUTE: String(VECTOR_MAX_LENGTH)})
     tj = {'name': tj_name, 'attributes': full_schema}
     db.create_table(cube, tj)
 

@@ -167,7 +167,10 @@ def build(context, dependencies, constraint, source, cube):
         projected_constraint = constraint_operations.project(
             constraint, all_attributes(relations))
         if projected_constraint:
-            db.delete_unsatisfied(cube, tj, projected_constraint)
+            filter_constraint = [[{'attribute': 'g', 'operation': '=',
+                                   'value': vector}]]
+            db.delete_unsatisfied(cube, tj, projected_constraint,
+                                  filter_constraint)
 
 
 def clean(context, dimension, cube):

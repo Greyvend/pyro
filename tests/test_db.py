@@ -701,7 +701,7 @@ class TestDeleteRows(DatabaseTestCase):
 
 
 class TestDeleteUnsatisfied(DatabaseTestCase):
-    def test(self):
+    def test_simple(self):
         metadata = MetaData(self.engine, reflect=True)
         users = Table('users', metadata,
                       Column('user_id', Integer, primary_key=True),
@@ -730,6 +730,38 @@ class TestDeleteUnsatisfied(DatabaseTestCase):
         self.assertEqual(len(all_records), 2)
         self.assertEqual(all_records[0]['user_name'], jack['user_name'])
         self.assertEqual(all_records[1]['user_name'], chris['user_name'])
+
+    def test_with_filter(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+        jack = {'user_name': 'jack', 'user_fullname': 'Jack Jones'}
+        wendy = {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+        chris = {'user_name': 'chris', 'user_fullname': 'Chris Kyle'}
+        jack2 = {'user_name': 'terminator', 'user_fullname': 'Jack Abrams'}
+        rows = [jack, wendy, chris, jack2]
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), rows)
+
+        constraint = [[{'attribute': 'user_name', 'operation': 'LIKE',
+                        'value': 'j%'}]]
+        filter_c = [[{'attribute': 'user_fullname', 'operation': 'LIKE',
+                    'value': 'Jack%'}]]
+
+        delete_unsatisfied(self.engine, {'name': 'users'},
+                           constraint=constraint, filter_constraint=filter_c)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 3)
+        self.assertEqual(all_records[0]['user_name'], jack['user_name'])
+        self.assertEqual(all_records[1]['user_name'], wendy['user_name'])
+        self.assertEqual(all_records[2]['user_name'], chris['user_name'])
 
 
 class TestInsertRows(DatabaseTestCase):

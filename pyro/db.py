@@ -4,6 +4,7 @@ from functools import reduce
 
 from sqlalchemy import Column, Table, MetaData, select, column, delete, \
     distinct, insert, table
+from sqlalchemy import text
 from sqlalchemy.sql.elements import and_, or_, between, not_
 from sqlalchemy.sql.functions import count
 from sqlalchemy.types import Integer, _Binary, LargeBinary
@@ -177,7 +178,7 @@ def _to_bool_clause(constraint):
                             for predicate in conjunction_clause)
                        for conjunction_clause in constraint)
     else:
-        return None
+        return text('')
 
 
 def get_data(engine, relation_name, attributes, constraint=None,
@@ -221,7 +222,7 @@ def delete_rows(engine, relation, rows):
         _execute(engine, del_query)
 
 
-def delete_unsatisfied(engine, relation, constraint):
+def delete_unsatisfied(engine, relation, constraint, filter_constraint=None):
     """
     Delete rows that DO NOT satisfy the specified constraint.
 
@@ -230,8 +231,12 @@ def delete_unsatisfied(engine, relation, constraint):
     :param constraint: logical constraint in DNF
     :type constraint: list of lists of predicates. First list elems are joined
         by disjunction, inner lists - by conjunction
+    :param filter_constraint: constraint for defining section of table to
+    delete data from
     """
-    whereclause = not_(_to_bool_clause(constraint))
+    delete_clause = not_(_to_bool_clause(constraint))
+    filter_clause = _to_bool_clause(filter_constraint)
+    whereclause = and_(delete_clause, filter_clause)
     del_query = delete(table(relation['name'])).where(whereclause)
     _execute(engine, del_query)
 

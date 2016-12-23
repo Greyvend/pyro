@@ -82,20 +82,24 @@ def is_empty_attr(row, attribute_name):
     return True
 
 
-def is_less_or_equal(v1, v2):
+def is_vector_less(r1, r2):
     """
     Make comparison of two vectors. Return true if first is less than or equal
     than second. This means that second vector contains all elements from the
     first.
 
-    :param v1: first vector
-    :param v2: second vector
+    :param r1: first row
+    :param r2: second row
     """
-    return set(v1).issubset(v2)
+    second_vector = r2[VECTOR_ATTRIBUTE]
+    for vector_part in decode_vector(r1):
+        if vector_part not in second_vector:
+            return False
+    return True
 
 
 def is_subordinate(r1, r2):
-    if r1[VECTOR_ATTRIBUTE] not in r2[VECTOR_ATTRIBUTE]:
+    if not is_vector_less(r1, r2):
         return False
     attributes = list(r1.keys())
     attributes.remove(VECTOR_ATTRIBUTE)

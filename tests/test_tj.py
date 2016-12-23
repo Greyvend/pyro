@@ -31,34 +31,38 @@ class TestVectorSerialization(TestCase):
             ['users', 'addresses', 'payments', 'pictures'])
 
 
-class TestIsLessOrEqual(TestCase):
-    def test_same_relation_set(self):
-        self.assertTrue(pyro.tj.is_less_or_equal(['first', 'second', 'third'],
-                                                 ['first', 'second', 'third']))
-        self.assertTrue(pyro.tj.is_less_or_equal(['first', 'third', 'second'],
-                                                 ['first', 'second', 'third']))
-        self.assertTrue(pyro.tj.is_less_or_equal(['third', 'second', 'first'],
-                                                 ['first', 'second', 'third']))
-
-    def test_different_relation_set(self):
-        # case 1: 1 out of 3 relations
-        self.assertTrue(pyro.tj.is_less_or_equal(['first'],
-                                                 ['first', 'second', 'third']))
-        self.assertTrue(pyro.tj.is_less_or_equal(['third'],
-                                                 ['first', 'second', 'third']))
-        # case 2: 2 out of 3 relations
-        self.assertTrue(pyro.tj.is_less_or_equal(['first', 'second'],
-                                                 ['first', 'second', 'third']))
-        self.assertTrue(pyro.tj.is_less_or_equal(['first', 'third'],
-                                                 ['first', 'second', 'third']))
-        # case 3: different relations
-        self.assertFalse(pyro.tj.is_less_or_equal(
-            ['first', 'second', 'fourth'], ['first', 'second', 'third']))
-        self.assertFalse(pyro.tj.is_less_or_equal(['fourth'], ['fifth']))
-        # case 4: excess relations
-        self.assertFalse(pyro.tj.is_less_or_equal(
-            ['first', 'second', 'third', 'fourth'],
-            ['first', 'second', 'third']))
+class TestIsVectorLess(TestCase):
+    def test(self):
+        pyro.tj.VECTOR_SEPARATOR = ';'
+        self.assertTrue(pyro.tj.is_vector_less({'g': '[A_1,A_2]'},
+                                               {'g': '[A_1,A_2]'}))
+        self.assertTrue(pyro.tj.is_vector_less({'g': '[A_1,A_2];[A_3,A_4]'},
+                                               {'g': '[A_1,A_2];[A_3,A_4]'}))
+        # 1 out of 2 relations
+        self.assertTrue(pyro.tj.is_vector_less({'g': '[A_1,A_2]'},
+                                               {'g': '[A_1,A_2];[A_3,A_4]'}))
+        self.assertTrue(pyro.tj.is_vector_less({'g': '[A_3,A_4]'},
+                                               {'g': '[A_1,A_2];[A_3,A_4]'}))
+        # 2 out of 3 relations
+        self.assertTrue(pyro.tj.is_vector_less(
+            {'g': '[A_1,A_2];[A_3,A_4]'},
+            {'g': '[A_1,A_2];[A_3,A_4];[A_4,A_5]'}))
+        self.assertTrue(pyro.tj.is_vector_less(
+            {'g': '[A_1,A_2];[A_4,A_5]'},
+            {'g': '[A_1,A_2];[A_3,A_4];[A_4,A_5]'}))
+        self.assertTrue(pyro.tj.is_vector_less(
+            {'g': '[A_3,A_4];[A_4,A_5]'},
+            {'g': '[A_1,A_2];[A_3,A_4];[A_4,A_5]'}))
+        # different relations
+        self.assertFalse(pyro.tj.is_vector_less(
+            {'g': '[A_3,A_4];[A_4,A_5]'},
+            {'g': '[A_1,A_2];[A_3,A_4];[A_4,A_5,A_6]'}))
+        self.assertFalse(pyro.tj.is_vector_less({'g': '[A_3,A_4]'},
+                                                {'g': '[A_1,A_2]'}))
+        # excess relations
+        self.assertFalse(pyro.tj.is_vector_less(
+            {'g': '[A_1,A_2];[A_3,A_4];[A_4,A_5,A_6]'},
+            {'g': '[A_1,A_2];[A_3,A_4]'}))
 
 
 class TestIsSubordinate(TestCase):

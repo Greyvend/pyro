@@ -1,3 +1,4 @@
+iso8601==0.1.11
 Mako==1.0.6
 MarkupSafe==0.23
 PyMySQL==0.7.6

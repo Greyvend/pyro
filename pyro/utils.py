@@ -1,3 +1,6 @@
+from iso8601 import parse_date, ParseError
+
+
 def all_attributes(relations):
     """
     All attributes found in given relations
@@ -130,3 +133,35 @@ def xstr(obj):
         if obj is None:
             return ''
         return str(obj)
+
+
+def parse_datetime(datetime_string):
+    """
+    Parses `datetime_string` into Python `datetime.datetime` object and clears
+    timezone information. If tz provided isn't UTC then raises `WrongDateTime`
+    exception.
+
+    :param datetime_string: string with time representation
+    :rtype: datetime.datetime
+    :return: corresponding date & time in UTC
+    :raises iso8601.ParseError in case of string that doesn't suit any
+        date/time representation
+    :raises WrongDateTime in case datetime_string is provided in timezone
+        different from UTC
+    """
+    dt = parse_date(datetime_string)
+    if dt.tzinfo:
+        if dt.tzinfo.utcoffset(dt):
+            raise ValueError(datetime_string)
+        # clear timezone info
+        dt = dt.replace(tzinfo=None)
+    return dt
+
+
+def process_value(obj):
+    if not isinstance(obj, str):
+        return obj
+    try:
+        return parse_datetime(obj)
+    except ParseError:
+        return obj

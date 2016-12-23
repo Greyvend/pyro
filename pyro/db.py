@@ -6,8 +6,7 @@ from sqlalchemy import Column, Table, MetaData, select, column, delete, \
     distinct, insert, table
 from sqlalchemy.sql.elements import and_, or_, between, not_
 from sqlalchemy.sql.functions import count
-from sqlalchemy.types import Integer, String, DateTime, Text, _Binary, \
-    LargeBinary
+from sqlalchemy.types import Integer, _Binary, LargeBinary
 
 from pyro.utils import containing_relation, common_keys, chunks
 # noinspection PyUnresolvedReferences
@@ -27,8 +26,6 @@ def _transform_column_type(column_type):
     """
     if isinstance(column_type, Integer):
         return Integer
-    elif isinstance(column_type, (String, DateTime)):
-        return Text
     elif isinstance(column_type, _Binary):
         return LargeBinary
     new_type = deepcopy(column_type)

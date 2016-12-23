@@ -1,7 +1,7 @@
 from sqlalchemy import MetaData, Integer, String, Column, Table, ForeignKey
 from sqlalchemy.dialects.mysql import REAL
 from sqlalchemy.exc import InternalError
-from sqlalchemy.sql.sqltypes import _Binary, Text, LargeBinary, Float
+from sqlalchemy.sql.sqltypes import _Binary, LargeBinary, Float
 
 from pyro import db
 from pyro.db import create_table, _transform_column_type, _execute, \
@@ -78,10 +78,8 @@ class TestCreateTable(DatabaseTestCase):
 class TestTransformColumnType(DatabaseTestCase):
     def test_handled_types(self):
         integer = Integer()
-        _str = String(15)
         binary = _Binary()
         self.assertEqual(_transform_column_type(integer), Integer)
-        self.assertEqual(_transform_column_type(_str), Text)
         self.assertEqual(_transform_column_type(binary), LargeBinary)
 
     def test_unhandled_type(self):

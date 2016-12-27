@@ -1,0 +1,59 @@
+[
+    {
+        "relation": {
+            "name": "TJ_1",
+            "attributes": {
+                "A1": "Integer",
+                "A2": "String",
+                "A4": "Integer",
+                "A6": "String"
+            }
+        },
+        "context": [
+            {
+                "name": "R_1",
+                "attributes": {
+                    "A11": "Integer",
+                    "A12": "String",
+                    "A13": "Integer",
+                    "A14": "Boolean"
+                }
+            },
+            {
+                "name": "R_2",
+                "attributes": {
+                    "A21": "Integer",
+                    "A22": "String",
+                    "A23": "Integer",
+                    "A24": "Boolean"
+                }
+            }
+        ],
+        "constraint": [
+            [
+                {
+                    "attribute": "A1",
+                    "operation": ">",
+                    "value": 4
+                },
+                {
+                    "attribute": "A2",
+                    "operation": "=",
+                    "value": 6
+                }
+            ],
+            [
+                {
+                    "attribute": "A4",
+                    "operation": "<>",
+                    "value": "str value"
+                },
+                {
+                    "attribute": "A6",
+                    "operation": "NOT BETWEEN",
+                    "value": [1, 16]
+                }
+            ]
+        ]
+    }
+]

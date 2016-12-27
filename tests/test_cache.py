@@ -4,6 +4,13 @@ from os.path import abspath, join, dirname
 from shutil import copyfile
 from unittest.mock import patch
 
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import MetaData
+from sqlalchemy import String
+from sqlalchemy import Table
+
+from pyro import db
 from pyro.cache import Cache
 from tests.alchemy import DatabaseTestCase
 
@@ -15,9 +22,11 @@ class TestCache(DatabaseTestCase):
         self.cache_file_path = abspath(join(dirname(__file__), 'test_data',
                                             'cache-tmp.json'))
         copyfile(sample_cache_file_path, self.cache_file_path)
+        super(TestCache, self).setUp()
 
     def tearDown(self):
         os.remove(self.cache_file_path)
+        super(TestCache, self).tearDown()
 
     @patch('pyro.cache.is_domain_included', autospec=True)
     def test_enable_context_subordination(self, mock_domain_included):
@@ -37,12 +46,12 @@ class TestCache(DatabaseTestCase):
         cache = Cache(engine, self.cache_file_path)
         cache.enable([r1], constraint)
 
-        self.assertTrue(cache.enabled)
+        self.assertFalse(cache.enabled)
 
         cache = Cache(engine, self.cache_file_path)
         cache.enable([r2], constraint)
 
-        self.assertTrue(cache.enabled)
+        self.assertFalse(cache.enabled)
 
         cache = Cache(engine, self.cache_file_path)
         cache.enable([r1, r2], constraint)
@@ -57,7 +66,7 @@ class TestCache(DatabaseTestCase):
         cache = Cache(engine, self.cache_file_path)
         cache.enable([r1, r2, r3], constraint)
 
-        self.assertFalse(cache.enabled)
+        self.assertTrue(cache.enabled)
 
     def test_enable_domain_contained(self):
         r1 = {
@@ -261,3 +270,69 @@ class TestCache(DatabaseTestCase):
         self.assertIn(context, [entry['context'] for entry in new_config])
         self.assertIn(constraint, [entry['constraint']
                                    for entry in new_config])
+
+    def test_restore(self):
+        metadata = MetaData(self.engine, reflect=True)
+        tj_cached = Table('TJ_1', metadata,
+                          Column('A1', Integer, primary_key=True),
+                          Column('A2', String(20)),
+                          Column('A4', Integer),
+                          Column('A6', String(50)))
+        new_tj = Table('TJ_new', metadata,
+                       Column('A1', Integer, primary_key=True),
+                       Column('A2', String(20)),
+                       Column('A4', Integer),
+                       Column('A6', String(50)),
+                       Column('A7', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            row_1 = {'A1': 1, 'A2': 'a12 str', 'A4': 14, 'A6': 'a16 str'}
+            conn.execute(tj_cached.insert(), [
+                row_1,
+                {'A1': 2, 'A2': 'a22 str', 'A4': 24, 'A6': 'a26 str'}
+            ])
+
+        dest_relation = {
+            "name": new_tj.name,
+            "attributes": {
+                "A1": "Integer",
+                "A2": "String",
+                "A4": "Integer",
+                "A6": "String",
+                "A7": "String"
+            }
+        }
+        context = [
+            {
+                "name": "R_1", "attributes": {"A1": "Integer",
+                                              "A2": "String",
+                                              "A3": "Integer",
+                                              "A4": "Boolean"}
+            },
+            {
+                "name": "R_2", "attributes": {"A1": "Integer",
+                                              "A6": "String"}
+            },
+            {
+                "name": "R_3", "attributes": {"A1": "Integer",
+                                              "A7": "String"}
+            }]
+        constraint = [[{
+            "attribute": "A1",
+            "operation": "<",
+            "value": 2
+        }]]
+        engine = self.engine
+
+        cache = Cache(engine, self.cache_file_path)
+        cache._config[0]['constraint'] = constraint
+        cache.enable(context=context, constraint=constraint)
+        cache.restore(dest_relation, constraint)
+
+        res = db.get_rows(self.engine, dest_relation)
+        self.assertEqual(len(res), 1)
+        first_row = res[0]
+        del first_row['A7']
+        self.assertDictEqual(dict(first_row), row_1)

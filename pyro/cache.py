@@ -1,5 +1,6 @@
 import json
 
+from pyro import db
 from pyro.constraints.operations import is_domain_included
 
 
@@ -16,7 +17,7 @@ class Cache:
         for entry in self._config:
             context_names = map(lambda r: r['name'], context)
             entry_names = map(lambda r: r['name'], entry['context'])
-            context_supersets = set(context_names).issubset(entry_names)
+            context_supersets = set(entry_names).issubset(context_names)
             if not context_supersets:
                 continue
             domain_included = is_domain_included(constraint,
@@ -36,4 +37,5 @@ class Cache:
             json.dump(self._config, config_file)
 
     def restore(self, dest_relation, *constraints):
-        pass
+        db.insert_from_select(self._engine, dest_relation,
+                              self._relation, *constraints)

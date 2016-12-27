@@ -255,10 +255,14 @@ def insert_from_select(engine, dest_relation, source_relation, *constraints):
 
     dest_table = metadata.tables[dest_relation['name']]
     source_table = metadata.tables[source_relation['name']]
-    attributes = dest_relation['attributes'].keys()
+    dest_attrs = dest_relation['attributes']
+    source_attrs = source_relation['attributes']
+    attributes = common_keys(dest_attrs, source_attrs)
+    columns = list(map(column, attributes))
     bool_clauses = map(_to_bool_clause, constraints)
-    s = source_table.select().where(and_(*bool_clauses))
-    insert_query = dest_table.insert().from_select(attributes, s)
+    whereclause = and_(*bool_clauses)
+    s = select(columns=columns, from_obj=source_table).where(whereclause)
+    insert_query = dest_table.insert().from_select(columns, s)
 
     _execute(engine, insert_query)
 

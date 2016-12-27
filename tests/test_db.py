@@ -983,6 +983,45 @@ class TestInsertFromSelect(DatabaseTestCase):
         self.assertEqual(first_row['user_name'], 'jane')
         self.assertEqual(first_row['user_fullname'], 'Jane Abrams')
 
+    def test_different_attributes(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users_1 = Table('users', metadata,
+                        Column('user_id', Integer, primary_key=True),
+                        Column('user_name', String(20)),
+                        Column('user_fullname', String(50)))
+        users_2 = Table('users_backup', metadata,
+                        Column('user_id', Integer, primary_key=True),
+                        Column('user_name', String(20)),
+                        Column('user_birth_city', String(20)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users_1.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+            ])
+
+        insert_from_select(self.engine,
+                           {'name': users_2.name,
+                            'attributes': users_2.c._data},
+                           {'name': users_1.name,
+                            'attributes': users_1.c._data})
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users_2.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 2)
+
+        first_row = all_records[0]
+        self.assertEqual(first_row['user_id'], 1)
+        self.assertEqual(first_row['user_name'], 'jack')
+        self.assertEqual(first_row['user_birth_city'], None)
+        second_row = all_records[1]
+        self.assertEqual(second_row['user_id'], 2)
+        self.assertEqual(second_row['user_name'], 'wendy')
+        self.assertEqual(second_row['user_birth_city'], None)
+
 
 class TestCountAttributes(DatabaseTestCase):
     def test_single_attribute(self):

@@ -35,24 +35,24 @@
                     {
                         "attribute": "A1",
                         "operation": ">",
-                        "expression": 4
+                        "value": 4
                     },
                     {
                         "attribute": "A2",
                         "operation": "=",
-                        "expression": 6
+                        "value": 6
                     }
                 ],
                 [
                     {
                         "attribute": "A4",
                         "operation": "<>",
-                        "expression": "str value"
+                        "value": "str value"
                     },
                     {
                         "attribute": "A6",
                         "operation": "NOT BETWEEN",
-                        "expression": [1, 16]
+                        "value": [1, 16]
                     }
                 ]
             ]

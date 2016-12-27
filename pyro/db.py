@@ -250,6 +250,19 @@ def insert_rows(engine, relation, rows):
     _execute(engine, insert_query, _rows)
 
 
+def insert_from_select(engine, dest_relation, source_relation, *constraints):
+    metadata = MetaData(engine, reflect=True)
+
+    dest_table = metadata.tables[dest_relation['name']]
+    source_table = metadata.tables[source_relation['name']]
+    attributes = dest_relation['attributes'].keys()
+    bool_clauses = map(_to_bool_clause, constraints)
+    s = source_table.select().where(and_(*bool_clauses))
+    insert_query = dest_table.insert().from_select(attributes, s)
+
+    _execute(engine, insert_query)
+
+
 def count_attributes(engine, relation_name, attributes):
     """
     Count amount of distinct values of attributes in the table

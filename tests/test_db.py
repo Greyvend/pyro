@@ -5,7 +5,8 @@ from sqlalchemy.sql.sqltypes import _Binary, LargeBinary, Float
 
 from pyro import db
 from pyro.db import create_table, _transform_column_type, _execute, \
-    get_rows, delete_rows, insert_rows, get_data, delete_unsatisfied
+    get_rows, delete_rows, insert_rows, get_data, delete_unsatisfied, \
+    insert_from_select
 from tests.alchemy import DatabaseTestCase
 
 
@@ -750,7 +751,7 @@ class TestDeleteUnsatisfied(DatabaseTestCase):
         constraint = [[{'attribute': 'user_name', 'operation': 'LIKE',
                         'value': 'j%'}]]
         filter_c = [[{'attribute': 'user_fullname', 'operation': 'LIKE',
-                    'value': 'Jack%'}]]
+                      'value': 'Jack%'}]]
 
         delete_unsatisfied(self.engine, {'name': 'users'},
                            constraint=constraint, filter_constraint=filter_c)
@@ -825,6 +826,162 @@ class TestInsertRows(DatabaseTestCase):
         usernames = [r['user_name'] for r in all_records]
         for row in rows:
             self.assertIn(row['user_name'], usernames)
+
+
+class TestInsertFromSelect(DatabaseTestCase):
+    def test_no_constraints(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        users_backup = Table('users_backup', metadata,
+                             Column('user_id', Integer, primary_key=True),
+                             Column('user_name', String(20)),
+                             Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+            ])
+
+        insert_from_select(self.engine,
+                           {'name': users_backup.name,
+                            'attributes': users_backup.c._data},
+                           {'name': users.name, 'attributes': users.c._data})
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users_backup.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 2)
+
+        first_row = all_records[0]
+        self.assertEqual(first_row['user_name'], 'jack')
+        self.assertEqual(first_row['user_fullname'], 'Jack Jones')
+        second_row = all_records[1]
+        self.assertEqual(second_row['user_name'], 'wendy')
+        self.assertEqual(second_row['user_fullname'], 'Wendy Williams')
+
+    def test_empty_constraints(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        users_backup = Table('users_backup', metadata,
+                             Column('user_id', Integer, primary_key=True),
+                             Column('user_name', String(20)),
+                             Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        constraints = [None, None, None]
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+            ])
+
+        insert_from_select(self.engine,
+                           {'name': users_backup.name,
+                            'attributes': users_backup.c._data},
+                           {'name': users.name, 'attributes': users.c._data},
+                           *constraints)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users_backup.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 2)
+
+        first_row = all_records[0]
+        self.assertEqual(first_row['user_name'], 'jack')
+        self.assertEqual(first_row['user_fullname'], 'Jack Jones')
+        second_row = all_records[1]
+        self.assertEqual(second_row['user_name'], 'wendy')
+        self.assertEqual(second_row['user_fullname'], 'Wendy Williams')
+
+    def test_some_empty_constraints(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        users_backup = Table('users_backup', metadata,
+                             Column('user_id', Integer, primary_key=True),
+                             Column('user_name', String(20)),
+                             Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        c1 = [[{'attribute': 'user_fullname', 'operation': 'LIKE',
+                'value': 'Wendy%'}]]
+        constraints = [None, c1]
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'}
+            ])
+
+        insert_from_select(self.engine,
+                           {'name': users_backup.name,
+                            'attributes': users_backup.c._data},
+                           {'name': users.name, 'attributes': users.c._data},
+                           *constraints)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users_backup.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 1)
+
+        first_row = all_records[0]
+        self.assertEqual(first_row['user_name'], 'wendy')
+        self.assertEqual(first_row['user_fullname'], 'Wendy Williams')
+
+    def test_multiple_constraints(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        users_backup = Table('users_backup', metadata,
+                             Column('user_id', Integer, primary_key=True),
+                             Column('user_name', String(20)),
+                             Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        c1 = [[{'attribute': 'user_name', 'operation': 'LIKE',
+                'value': 'j%'}]]
+        c2 = [[{'attribute': 'user_fullname', 'operation': 'LIKE',
+                'value': '%Abrams'}]]
+        constraints = [c1, c2]
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'wendy', 'user_fullname': 'Wendy Williams'},
+                {'user_name': 'jane', 'user_fullname': 'Jane Abrams'}
+            ])
+
+        insert_from_select(self.engine,
+                           {'name': users_backup.name,
+                            'attributes': users_backup.c._data},
+                           {'name': users.name, 'attributes': users.c._data},
+                           *constraints)
+
+        with self.engine.connect() as conn:
+            res = conn.execute(users_backup.select())
+            all_records = res.fetchall()
+        self.assertEqual(len(all_records), 1)
+
+        first_row = all_records[0]
+        self.assertEqual(first_row['user_name'], 'jane')
+        self.assertEqual(first_row['user_fullname'], 'Jane Abrams')
 
 
 class TestCountAttributes(DatabaseTestCase):

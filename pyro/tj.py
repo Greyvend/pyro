@@ -1,11 +1,9 @@
 from sqlalchemy import String
 
-from pyro.constraints import utils as constraint_utils
 from pyro.constraints import operations as constraint_operations
 from pyro import db
 from pyro.transformation import lossless_combinations
-from pyro.utils import all_attributes, process_value
-
+from pyro.utils import all_attributes, process_value, random_str
 
 VECTOR_ATTRIBUTE = 'g'
 VECTOR_SEPARATOR = ';separator;'
@@ -126,8 +124,8 @@ def filter_subordinate_rows(tj_data, new_data):
                 yield tj_row
 
 
-def compose_tj_name(context):
-    return 'TJ_' + '_'.join(sorted(r['name'] for r in context))
+def compose_table_name():
+    return 'TJ_' + random_str(10)
 
 
 def build(context, dependencies, constraint, source, cube):
@@ -142,7 +140,7 @@ def build(context, dependencies, constraint, source, cube):
     :param cube: SQLAlchemy engine for cube DB
     """
     # create TJ in destination DB
-    tj_name = compose_tj_name(context)
+    tj_name = compose_table_name()
     attributes = get_attributes(context, dependencies)
     # add vector attribute holding information about participating relations
     full_schema = attributes.copy()
@@ -171,8 +169,4 @@ def build(context, dependencies, constraint, source, cube):
                                    'value': vector}]]
             db.delete_unsatisfied(cube, tj, projected_constraint,
                                   filter_constraint)
-
-
-def clean(context, dimension, cube):
-    tj = {'name': compose_tj_name(context)}
-    db.delete_unsatisfied(cube, tj, constraint_utils.not_null(dimension))
+    return tj

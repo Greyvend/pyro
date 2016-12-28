@@ -11,6 +11,7 @@ from pyro.utils import relation_name, assemble_list, attribute_name
 
 logging.basicConfig(level=logging.INFO)
 
+
 if __name__ == '__main__':
     with open('config.json') as config_file:
         config = json.load(config_file)
@@ -79,19 +80,18 @@ if __name__ == '__main__':
         config['cube_db']['database']))
     cube_engine = create_engine(URL(**config['cube_db']))
 
+    table_names = []
     for context, constraint, dimension in zip(contexts, constraints,
                                               dimension_attributes + [[]]):
         logging.info('Building Table of Joins for the context {}'.format(
             context))
-        tj.build(context, dependencies, constraint, source_engine, cube_engine)
-        if dimension:
-            # clean new tj from the rows with empty/NULL values of dimension
-            # attributes
-            tj.clean(context, dimension, cube_engine)
+        table_of_joins = tj.build(context, dependencies, constraint,
+                                  source_engine, cube_engine)
+        table_names.append(table_of_joins['name'])
 
     logging.info('The source Database has been successfully transformed to '
                  'OLAP representation!')
 
     logging.info('Writing the result table to the file')
-    representation.create(cube_engine, contexts, dimension_attributes,
+    representation.create(cube_engine, table_names, dimension_attributes,
                           measure_attribute, config['output_file'])

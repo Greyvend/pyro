@@ -3,7 +3,6 @@ from itertools import groupby
 from mako.template import Template
 
 from pyro import db
-from pyro.tj import compose_tj_name
 from pyro.utils import xstr
 
 
@@ -59,12 +58,12 @@ def _prettify(hierarchy_y, y, hierarchy_x, x, body,
         yield row_x
 
 
-def _build(engine, contexts, dimensions, measure):
+def _build(engine, relation_names, dimensions, measure):
     """
     Create internal representation of the cross table
 
     :param engine: SQLAlchemy engine to be used
-    :param contexts: list of contexts (lists of relations)
+    :param relation_names: lists of names of relations to be used
     :param dimensions: user defined dimensions
     :type dimensions: list of lists of strings
     :param measure: name of the attribute to populate table body with
@@ -72,21 +71,21 @@ def _build(engine, contexts, dimensions, measure):
 
     :return: in-memory representation of the result table
     """
-    assert len(contexts) == 3
+    assert len(relation_names) == 3
     # section 1: build top part of the header (Y dimension)
-    relation_y_name = compose_tj_name(contexts[0])
+    relation_y_name = relation_names[0]
     hierarchy_y = _get_hierarchy(engine, relation_y_name, dimensions[0])
     projection_y = db.project(engine, relation_y_name, hierarchy_y)
     merged_projection_y = list(map(lambda g: g[0], groupby(projection_y)))
 
     # section 2: build side part of the header (X dimension)
-    relation_x_name = compose_tj_name(contexts[1])
+    relation_x_name = relation_names[1]
     hierarchy_x = _get_hierarchy(engine, relation_x_name, dimensions[1])
     projection_x = db.project(engine, relation_x_name, hierarchy_x)
     merged_projection_x = list(map(lambda g: g[0], groupby(projection_x)))
 
     # section 3: build table body (Z block)
-    relation_z_name = compose_tj_name(contexts[2])
+    relation_z_name = relation_names[2]
     body = []
     for row in merged_projection_x:
         body_row = []
@@ -178,9 +177,9 @@ def _to_html(table, dimensions):
     return ''.join(table_tag)
 
 
-def create(engine, contexts, dimensions, measure, file_name):
+def create(engine, relation_names, dimensions, measure, file_name):
     # perform calculations and prepare HTML code
-    table = _build(engine, contexts, dimensions, measure)
+    table = _build(engine, relation_names, dimensions, measure)
     html_table = _to_html(table, dimensions)
     # write to a file
     template = Template(filename='templates/cross_table.html')

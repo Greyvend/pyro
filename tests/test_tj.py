@@ -180,12 +180,13 @@ class TestBuild(DatabaseTestCase):
               Column('D', Integer))
         metadata.create_all()
 
-        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
-        pyro.tj.build([r2, r1], dependencies, constraint, source, cube)
+        tj_1 = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj_2 = pyro.tj.build([r2, r1], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
-        self.assertEqual(len(metadata.tables.keys()), 1)
-        self.assertIn('TJ_R1_R2', metadata.tables)
+        self.assertEqual(len(metadata.tables.keys()), 2)
+        self.assertIn(tj_1['name'], metadata.tables)
+        self.assertIn(tj_2['name'], metadata.tables)
 
     def test_integration_empty_tables(self):
         r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
@@ -207,14 +208,14 @@ class TestBuild(DatabaseTestCase):
               Column('D', Integer))
         metadata.create_all()
 
-        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj_1 = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 1)
-        self.assertIn('TJ_R1_R2', metadata.tables)
+        self.assertIn(tj_1['name'], metadata.tables)
         with cube.connect() as conn:
-            tj = metadata.tables['TJ_R1_R2'].select()
-            res = conn.execute(tj)
+            s = metadata.tables[tj_1['name']].select()
+            res = conn.execute(s)
             all_records = res.fetchall()
         self.assertEqual(len(all_records), 0)
 
@@ -248,13 +249,14 @@ class TestBuild(DatabaseTestCase):
                 {'C': 33, 'D': 44}
             ])
 
-        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        pyro.tj.VECTOR_SEPARATOR = ','
+        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
-        self.assertIn('TJ_R1_R2', metadata.tables)
+        self.assertIn(tj['name'], metadata.tables)
         with cube.connect() as conn:
-            tj = metadata.tables['TJ_R1_R2'].select()
-            res = conn.execute(tj)
+            s = metadata.tables[tj['name']].select()
+            res = conn.execute(s)
             all_records = res.fetchall()
         self.assertEqual(len(all_records), 3)
         self.assertEqual(all_records[0]['A'], 1)
@@ -308,13 +310,13 @@ class TestBuild(DatabaseTestCase):
                 {'C': 33, 'D': 44}
             ])
 
-        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
-        self.assertIn('TJ_R1_R2', metadata.tables)
+        self.assertIn(tj['name'], metadata.tables)
         with cube.connect() as conn:
-            tj = metadata.tables['TJ_R1_R2'].select()
-            res = conn.execute(tj)
+            s = metadata.tables[tj['name']].select()
+            res = conn.execute(s)
             all_records = res.fetchall()
         self.assertEqual(len(all_records), 2)
         self.assertEqual(all_records[0]['A'], 1)
@@ -363,14 +365,14 @@ class TestBuild(DatabaseTestCase):
                 {'C': 33, 'D': 44}
             ])
 
-        pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 1)
-        self.assertIn('TJ_R1_R2', metadata.tables)
+        self.assertIn(tj['name'], metadata.tables)
         with cube.connect() as conn:
-            tj = metadata.tables['TJ_R1_R2'].select()
-            res = conn.execute(tj)
+            s = metadata.tables[tj['name']].select()
+            res = conn.execute(s)
             all_records = res.fetchall()
         self.assertEqual(len(all_records), 3)
         self.assertIn("['A', 'B', 'C'],['C', 'D']",  # R1 & R2 vector

@@ -1,6 +1,8 @@
+import string
 from json import JSONEncoder
-
 import datetime
+from random import choice
+
 from iso8601 import parse_date, ParseError
 from sqlalchemy.sql.type_api import TypeEngine
 from sqlalchemy.sql.visitors import VisitableType
@@ -180,3 +182,13 @@ class SQLAlchemySerializer(JSONEncoder):
             return list(o)
         else:
             return JSONEncoder.default(self, o)
+
+
+def random_str(length):
+    """
+    Generate random alphanumeric string with digits and letters
+
+    :param length: length of output sequence
+    """
+    return ''.join(choice(string.ascii_letters + string.digits)
+                   for _ in range(length))

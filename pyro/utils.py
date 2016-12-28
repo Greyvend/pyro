@@ -1,4 +1,9 @@
+from json import JSONEncoder
+
+import datetime
 from iso8601 import parse_date, ParseError
+from sqlalchemy.sql.type_api import TypeEngine
+from sqlalchemy.sql.visitors import VisitableType
 
 
 def all_attributes(relations):
@@ -165,3 +170,13 @@ def process_value(obj):
         return parse_datetime(obj)
     except ParseError:
         return obj
+
+
+class SQLAlchemySerializer(JSONEncoder):
+    def default(self, o):
+        if isinstance(o, (TypeEngine, VisitableType)):
+            return str(o)
+        if isinstance(o, set):
+            return list(o)
+        else:
+            return JSONEncoder.default(self, o)

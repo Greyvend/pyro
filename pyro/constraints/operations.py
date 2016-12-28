@@ -65,6 +65,10 @@ def is_domain_included(c1, c2):
     :type c2:  list of lists of dicts
     :return: True if M(c1) is subset of M(c2), False otherwise
     """
+    if not c2:
+        return True
+    if not c1:
+        return False
     for conjunction_clause_1 in c1:
         for conjunction_clause_2 in c2:
             if _is_conjunction_clause_domain_included(conjunction_clause_1,

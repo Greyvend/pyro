@@ -47,6 +47,20 @@ class TestIsPredicateDomainIncluded(TestCase):
 
 
 class TestIsDomainIncluded(TestCase):
+    def test_empty_constraint(self):
+        c1 = [[{'attribute': 'A1', 'operation': '=', 'value': 3}]]
+        c2 = []
+
+        self.assertTrue(is_domain_included(c1, c2))
+        self.assertFalse(is_domain_included(c2, c1))
+
+    def test_empty_both_constraints(self):
+        c1 = []
+        c2 = []
+
+        self.assertTrue(is_domain_included(c1, c2))
+        self.assertTrue(is_domain_included(c2, c1))
+
     def test_single_conjunction_clause_successful(self):
         c1 = [
             [{'attribute': 'A1', 'operation': '=', 'value': 3},

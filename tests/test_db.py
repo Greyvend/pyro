@@ -1132,6 +1132,69 @@ class TestCountAttributes(DatabaseTestCase):
                           ['this attribute is not there'])
 
 
+class TestCountConstraint(DatabaseTestCase):
+    def test_emtpy_constraint(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones'},
+            ])
+
+        counts = db.count_constrained(self.engine, 'users', [])
+
+        self.assertEqual(counts, 2)
+
+    def test_satisfied_constraint(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones'},
+            ])
+        constraint = [[{'attribute': 'user_name', 'operation': '=',
+                        'value': 'jack'}]]
+
+        counts = db.count_constrained(self.engine, 'users', constraint)
+
+        self.assertEqual(counts, 1)
+
+    def test_unsatisfied_constraint(self):
+        metadata = MetaData(self.engine, reflect=True)
+        users = Table('users', metadata,
+                      Column('user_id', Integer, primary_key=True),
+                      Column('user_name', String(20)),
+                      Column('user_fullname', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            conn.execute(users.insert(), [
+                {'user_name': 'jack', 'user_fullname': 'Jack Jones'},
+                {'user_name': 'jack19', 'user_fullname': 'Jack Jones'},
+            ])
+        constraint = [[{'attribute': 'user_name', 'operation': 'LIKE',
+                        'value': 'wendy%'}]]
+
+        counts = db.count_constrained(self.engine, 'users', constraint)
+
+        self.assertEqual(counts, 0)
+
+
 class TestProject(DatabaseTestCase):
     def test_single_attribute(self):
         metadata = MetaData(self.engine, reflect=True)

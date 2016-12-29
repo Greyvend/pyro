@@ -251,6 +251,15 @@ def insert_rows(engine, relation, rows):
 
 
 def insert_from_select(engine, dest_relation, source_relation, *constraints):
+    """
+    Count all rows satisfying given constraint
+
+    :param engine: SQLAlchemy engine to be used
+    :param dest_relation: relation to insert data into
+    :param source_relation: relation to get data from
+    :param constraints: arbitrary amount of logical constraints to apply to
+        source data (joining with AND)
+    """
     metadata = MetaData(engine, reflect=True)
 
     dest_table = metadata.tables[dest_relation['name']]
@@ -289,6 +298,22 @@ def count_attributes(engine, relation_name, attributes):
     # noinspection PyTypeChecker
     keys = ['count_{}'.format(i + 1) for i in range(len(counts_dict.keys()))]
     return [counts_dict[k] for k in keys]
+
+
+def count_constrained(engine, relation_name, constraint):
+    """
+    Count all rows satisfying given constraint
+
+    :param engine: SQLAlchemy engine to be used
+    :param relation_name: relation to scan
+    :param constraint: logical constraint in DNF
+    """
+    # s = select([count()]).select_from(table(relation_name)).where
+    bool_clause = _to_bool_clause(constraint)
+    s = select(columns=[count()], from_obj=table(relation_name)).where(
+        bool_clause)
+    counts_dict = _execute(engine, s)[0]
+    return counts_dict['count_1']
 
 
 def project(engine, relation_name, attributes):

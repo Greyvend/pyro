@@ -119,6 +119,102 @@ class TestCache(DatabaseTestCase):
 
         self.assertFalse(cache.enabled)
 
+    def test_contains_unsatisfied(self):
+        metadata = MetaData(self.engine, reflect=True)
+        tj_cached = Table('TJ_1', metadata,
+                          Column('A1', Integer, primary_key=True),
+                          Column('A2', String(20)),
+                          Column('A4', Integer),
+                          Column('A6', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            row_1 = {'A1': 1, 'A2': 'a12 str', 'A4': 14, 'A6': 'a16 str'}
+            conn.execute(tj_cached.insert(), [
+                row_1,
+                {'A1': 2, 'A2': 'a22 str', 'A4': 24, 'A6': 'a26 str'}
+            ])
+
+        context = [
+            {
+                "name": "R_1", "attributes": {"A1": "Integer",
+                                              "A2": "String",
+                                              "A3": "Integer",
+                                              "A4": "Boolean"}
+            },
+            {
+                "name": "R_2", "attributes": {"A1": "Integer",
+                                              "A6": "String"}
+            },
+            {
+                "name": "R_3", "attributes": {"A1": "Integer",
+                                              "A7": "String"}
+            }]
+        constraint = []
+        constraint_to_check = [[{
+            "attribute": "A1",
+            "operation": "IN",
+            "value": [6, 8, 12]
+        }]]
+        engine = self.engine
+
+        cache = Cache(engine, self.cache_file_path)
+        cache._config[0]['constraint'] = constraint
+        cache.enable(context=context, constraint=constraint)
+
+        contains = cache.contains(constraint_to_check)
+
+        self.assertFalse(contains)
+
+    def test_contains_satisfied(self):
+        metadata = MetaData(self.engine, reflect=True)
+        tj_cached = Table('TJ_1', metadata,
+                          Column('A1', Integer, primary_key=True),
+                          Column('A2', String(20)),
+                          Column('A4', Integer),
+                          Column('A6', String(50)))
+        metadata.create_all()
+
+        # populate with data
+        with self.engine.connect() as conn:
+            row_1 = {'A1': 1, 'A2': 'a12 str', 'A4': 14, 'A6': 'a16 str'}
+            conn.execute(tj_cached.insert(), [
+                row_1,
+                {'A1': 2, 'A2': 'a22 str', 'A4': 24, 'A6': 'a26 str'}
+            ])
+
+        context = [
+            {
+                "name": "R_1", "attributes": {"A1": "Integer",
+                                              "A2": "String",
+                                              "A3": "Integer",
+                                              "A4": "Boolean"}
+            },
+            {
+                "name": "R_2", "attributes": {"A1": "Integer",
+                                              "A6": "String"}
+            },
+            {
+                "name": "R_3", "attributes": {"A1": "Integer",
+                                              "A7": "String"}
+            }]
+        constraint = []
+        constraint_to_check = [[{
+            "attribute": "A1",
+            "operation": ">=",
+            "value": 2
+        }]]
+        engine = self.engine
+
+        cache = Cache(engine, self.cache_file_path)
+        cache._config[0]['constraint'] = constraint
+        cache.enable(context=context, constraint=constraint)
+
+        contains = cache.contains(constraint_to_check)
+
+        self.assertTrue(contains)
+
     def test_add_existing(self):
         relation = {
             "name": "TJ_1",
@@ -329,6 +425,7 @@ class TestCache(DatabaseTestCase):
         cache = Cache(engine, self.cache_file_path)
         cache._config[0]['constraint'] = constraint
         cache.enable(context=context, constraint=constraint)
+
         cache.restore(dest_relation, constraint)
 
         res = db.get_rows(self.engine, dest_relation)

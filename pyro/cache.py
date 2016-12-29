@@ -41,6 +41,20 @@ class Cache:
                 self.enabled = True
                 return
 
+    def contains(self, constraint):
+        """
+        Check whether data satisfying given logical constraint exists in the
+        cache.
+
+        :param constraint: list of lists of predicates, representing logical
+            constraint
+        :return True if there's at least one row that satisfies the constraint,
+            False otherwise
+        """
+        count = db.count_constrained(self._engine, self._relation['name'],
+                                     constraint)
+        return count > 0
+
     def add(self, relation, context, constraint):
         if relation in map(lambda entry: entry['relation'], self._config):
             return

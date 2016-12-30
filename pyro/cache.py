@@ -82,7 +82,8 @@ class Cache:
         join property isn't satisfied the results will be wrong.
 
         :param context: list of relations satisfying lossless join property
-        :return:
+        :return: True if the context is a subset of active cache entry's
+            context, False otherwise
         """
         context_names = [r['name'] for r in context]
         self_context_names = [r['name'] for r in self._active_entry['context']]

@@ -276,6 +276,9 @@ class TestCache(DatabaseTestCase):
         contains = cache.contains_context([{"name": "R_2"}, {"name": "R_3"}])
         self.assertTrue(contains)
 
+        contains = cache.contains_context(context)
+        self.assertTrue(contains)
+
     def test_add_existing(self):
         relation = {
             "name": "TJ_1",

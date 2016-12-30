@@ -86,7 +86,7 @@ class Cache:
         """
         context_names = [r['name'] for r in context]
         self_context_names = [r['name'] for r in self._active_entry['context']]
-        return set(context_names) < set(self_context_names)
+        return set(context_names).issubset(self_context_names)
 
     def add(self, relation, context, constraint):
         """

@@ -7,11 +7,15 @@ from pyro.utils import SQLAlchemySerializer
 
 
 class Cache:
+    """
+    Class implementing register of cached Tables of Joins. It also has a state
+    of enabled TJ that can be used to restore data into some other table.
+    """
     def __init__(self, engine, file):
         self._engine = engine
         self._file = file
         self._config = None
-        self._relation = None
+        self._active_entry = None
         self.enabled = False
 
         self.read_config(self._file)
@@ -31,7 +35,7 @@ class Cache:
             except JSONDecodeError:
                 self._config = []
                 json.dump(self._config, config_file)
-        self._relation = None
+        self._active_entry = None
         self.enabled = False
 
     def enable(self, context, constraint):
@@ -53,7 +57,7 @@ class Cache:
             domain_included = is_domain_included(constraint,
                                                  entry['constraint'])
             if domain_included:
-                self._relation = entry['relation']
+                self._active_entry = entry
                 self.enabled = True
                 return
 
@@ -67,9 +71,22 @@ class Cache:
         :return True if there's at least one row that satisfies the constraint,
             False otherwise
         """
-        count = db.count_constrained(self._engine, self._relation['name'],
+        count = db.count_constrained(self._engine,
+                                     self._active_entry['relation']['name'],
                                      constraint)
         return count > 0
+
+    def contains_context(self, context):
+        """
+        Define whether given context is contained in the cache. If lossless
+        join property isn't satisfied the results will be wrong.
+
+        :param context: list of relations satisfying lossless join property
+        :return:
+        """
+        context_names = [r['name'] for r in context]
+        self_context_names = [r['name'] for r in self._active_entry['context']]
+        return set(context_names) < set(self_context_names)
 
     def add(self, relation, context, constraint):
         """
@@ -100,4 +117,4 @@ class Cache:
             specify filtering options for the source data
         """
         db.insert_from_select(self._engine, dest_relation,
-                              self._relation, *constraints)
+                              self._active_entry['relation'], *constraints)

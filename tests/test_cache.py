@@ -215,6 +215,67 @@ class TestCache(DatabaseTestCase):
 
         self.assertTrue(contains)
 
+    def test_contains_context_unsatisfied(self):
+        context = [
+            {
+                "name": "R_1", "attributes": {"A1": "Integer",
+                                              "A2": "String",
+                                              "A3": "Integer",
+                                              "A4": "Boolean"}
+            },
+            {
+                "name": "R_2", "attributes": {"A1": "Integer",
+                                              "A6": "String"}
+            },
+            {
+                "name": "R_3", "attributes": {"A1": "Integer",
+                                              "A7": "String"}
+            }]
+        constraint = []
+        engine = self.engine
+
+        cache = Cache(engine, self.cache_file_path)
+        cache._config[0]['constraint'] = constraint
+        cache._config[0]['context'] = context
+        cache.enable(context=context, constraint=constraint)
+
+        contains = cache.contains_context([{"name": "R_1"}, {"name": "R_5"}])
+
+        self.assertFalse(contains)
+
+    def test_contains_context_satisfied(self):
+        context = [
+            {
+                "name": "R_1", "attributes": {"A1": "Integer",
+                                              "A2": "String",
+                                              "A3": "Integer",
+                                              "A4": "Boolean"}
+            },
+            {
+                "name": "R_2", "attributes": {"A1": "Integer",
+                                              "A6": "String"}
+            },
+            {
+                "name": "R_3", "attributes": {"A1": "Integer",
+                                              "A7": "String"}
+            }]
+        constraint = []
+        engine = self.engine
+
+        cache = Cache(engine, self.cache_file_path)
+        cache._config[0]['constraint'] = constraint
+        cache._config[0]['context'] = context
+        cache.enable(context=context, constraint=constraint)
+
+        contains = cache.contains_context([{"name": "R_2"}])
+        self.assertTrue(contains)
+
+        contains = cache.contains_context([{"name": "R_1"}, {"name": "R_2"}])
+        self.assertTrue(contains)
+
+        contains = cache.contains_context([{"name": "R_2"}, {"name": "R_3"}])
+        self.assertTrue(contains)
+
     def test_add_existing(self):
         relation = {
             "name": "TJ_1",

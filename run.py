@@ -75,6 +75,8 @@ if __name__ == '__main__':
                            config['dimensions']))
     constraints.append([])  # no application constraint will be used
 
+    cache_file_path = config.get('cache_file', 'cache.json')
+
     # connect to the output DB
     logging.info('Connecting to the cube DB: {}'.format(
         config['cube_db']['database']))
@@ -86,7 +88,7 @@ if __name__ == '__main__':
         logging.info('Building Table of Joins for the context {}'.format(
             context))
         table_of_joins = tj.build(context, dependencies, constraint,
-                                  source_engine, cube_engine)
+                                  source_engine, cube_engine, cache_file_path)
         table_names.append(table_of_joins['name'])
 
     logging.info('The source Database has been successfully transformed to '

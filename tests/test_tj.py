@@ -1,3 +1,4 @@
+import os
 from unittest import TestCase
 
 from sqlalchemy import Column
@@ -156,7 +157,15 @@ class TestFilterSubordinateRows(TestCase):
 
 
 class TestBuild(DatabaseTestCase):
-    def test_relations_order(self):
+    def setUp(self):
+        self.cache_file_path = 'cache.json'
+        super(TestBuild, self).setUp()
+
+    def tearDown(self):
+        os.remove(self.cache_file_path)
+        super(TestBuild, self).tearDown()
+
+    def test_relations_order_no_cache(self):
         """
         Context should be treated in the same way regardless of its relations
         order
@@ -180,15 +189,18 @@ class TestBuild(DatabaseTestCase):
               Column('D', Integer))
         metadata.create_all()
 
-        tj_1 = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
-        tj_2 = pyro.tj.build([r2, r1], dependencies, constraint, source, cube)
+        tj_1 = pyro.tj.build([r1, r2], dependencies, constraint, source, cube,
+                             self.cache_file_path)
+        os.remove(self.cache_file_path)  # clear cache file
+        tj_2 = pyro.tj.build([r2, r1], dependencies, constraint, source, cube,
+                             self.cache_file_path)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 2)
         self.assertIn(tj_1['name'], metadata.tables)
         self.assertIn(tj_2['name'], metadata.tables)
 
-    def test_integration_empty_tables(self):
+    def test_integration_empty_tables_no_cache(self):
         r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
                                            'C': Integer},
               'pk': {'A', 'B'}}
@@ -208,7 +220,8 @@ class TestBuild(DatabaseTestCase):
               Column('D', Integer))
         metadata.create_all()
 
-        tj_1 = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj_1 = pyro.tj.build([r1, r2], dependencies, constraint, source, cube,
+                             self.cache_file_path)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 1)
@@ -219,7 +232,7 @@ class TestBuild(DatabaseTestCase):
             all_records = res.fetchall()
         self.assertEqual(len(all_records), 0)
 
-    def test_integration_with_data(self):
+    def test_integration_with_data_no_cache(self):
         r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
                                            'C': Integer},
               'pk': {'A', 'B'}}
@@ -250,7 +263,8 @@ class TestBuild(DatabaseTestCase):
             ])
 
         pyro.tj.VECTOR_SEPARATOR = ','
-        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube,
+                           self.cache_file_path)
 
         metadata = MetaData(cube, reflect=True)
         self.assertIn(tj['name'], metadata.tables)
@@ -277,7 +291,7 @@ class TestBuild(DatabaseTestCase):
         self.assertEqual(all_records[2]['D'], 4)
         self.assertEqual(all_records[2]['g'], "['A', 'B', 'C'],['C', 'D']")
 
-    def test_integration_with_data_and_constraint(self):
+    def test_integration_with_data_and_constraint_no_cache(self):
         r1 = {'name': 'R1', 'attributes': {'A': Integer, 'B': Integer,
                                            'C': Integer},
               'pk': {'A', 'B'}}
@@ -310,7 +324,8 @@ class TestBuild(DatabaseTestCase):
                 {'C': 33, 'D': 44}
             ])
 
-        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube,
+                           self.cache_file_path)
 
         metadata = MetaData(cube, reflect=True)
         self.assertIn(tj['name'], metadata.tables)
@@ -331,7 +346,7 @@ class TestBuild(DatabaseTestCase):
         self.assertEqual(all_records[1]['D'], 44)
         self.assertEqual(all_records[1]['g'], "['C', 'D']")
 
-    def test_pseudocontext(self):
+    def test_pseudocontext_no_cache(self):
         """
         Check that in case with pseudocontexts the whole relation set is used
         to construct TJ
@@ -365,7 +380,8 @@ class TestBuild(DatabaseTestCase):
                 {'C': 33, 'D': 44}
             ])
 
-        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube)
+        tj = pyro.tj.build([r1, r2], dependencies, constraint, source, cube,
+                           self.cache_file_path)
 
         metadata = MetaData(cube, reflect=True)
         self.assertEqual(len(metadata.tables.keys()), 1)

@@ -1,7 +1,8 @@
 from sqlalchemy import String
 
-from pyro.constraints import operations as constraint_operations
 from pyro import db
+from pyro.cache import Cache
+from pyro.constraints import operations as constraint_operations
 from pyro.transformation import lossless_combinations
 from pyro.utils import all_attributes, process_value, random_str
 
@@ -128,7 +129,7 @@ def compose_table_name():
     return 'TJ_' + random_str(10)
 
 
-def build(context, dependencies, constraint, source, cube):
+def build(context, dependencies, constraint, source, cube, cache_file):
     """
     Build Table of Joins and write it to the destination DB
 
@@ -138,7 +139,13 @@ def build(context, dependencies, constraint, source, cube):
     :type constraint: list of lists of dicts
     :param source: SQLAlchemy engine for source DB
     :param cube: SQLAlchemy engine for cube DB
+    :param cache_file: file name of the cache file to be used
     """
+    cache = Cache(cube, cache_file)
+    cached_tj = cache.full_match(context, constraint)
+    if cached_tj:
+        return cached_tj
+
     # create TJ in destination DB
     tj_name = compose_table_name()
     attributes = get_attributes(context, dependencies)
@@ -148,25 +155,31 @@ def build(context, dependencies, constraint, source, cube):
     tj = {'name': tj_name, 'attributes': full_schema}
     db.create_table(cube, tj)
 
+    cache.enable(context, constraint)
+    cache.add(tj, context, constraint)
+
     # fill TJ with data
     relations_packs = list(lossless_combinations(context, dependencies))
     if context not in relations_packs:
         relations_packs.append(context)
     for relations in relations_packs:
-        join_data = db.natural_join(source, relations, attributes)
         vector = encode_vector(relations)
-        # not using functional approach here to avoid data copying
-        for row in join_data:
-            row[VECTOR_ATTRIBUTE] = vector
-        tj_data = db.get_rows(cube, tj)
-        rows_to_delete = filter_subordinate_rows(tj_data, join_data)
-        db.delete_rows(cube, tj, rows_to_delete)
-        db.insert_rows(cube, tj, join_data)
         projected_constraint = constraint_operations.project(
             constraint, all_attributes(relations))
-        if projected_constraint:
-            filter_constraint = [[{'attribute': 'g', 'operation': '=',
-                                   'value': vector}]]
-            db.delete_unsatisfied(cube, tj, projected_constraint,
-                                  filter_constraint)
+        filter_constraint = [[{'attribute': 'g', 'operation': '=',
+                               'value': vector}]]
+        if cache.enabled and cache.contains_context(relations):
+            cache.restore(tj, projected_constraint, filter_constraint)
+        else:
+            join_data = db.natural_join(source, relations, attributes)
+            # not using functional approach here to avoid data copying
+            for row in join_data:
+                row[VECTOR_ATTRIBUTE] = vector
+            tj_data = db.get_rows(cube, tj)
+            rows_to_delete = filter_subordinate_rows(tj_data, join_data)
+            db.delete_rows(cube, tj, rows_to_delete)
+            db.insert_rows(cube, tj, join_data)
+            if projected_constraint:
+                db.delete_unsatisfied(cube, tj, projected_constraint,
+                                      filter_constraint)
     return tj

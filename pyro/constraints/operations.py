@@ -1,3 +1,5 @@
+from operator import itemgetter
+
 from pyro.constraints.domains import factory
 
 
@@ -73,6 +75,37 @@ def is_domain_included(c1, c2):
         for conjunction_clause_2 in c2:
             if _is_conjunction_clause_domain_included(conjunction_clause_1,
                                                       conjunction_clause_2):
+                break
+        else:
+            return False
+    return True
+
+
+def _conjunction_clauses_equal(cc1, cc2):
+    if len(cc1) != len(cc2):
+        return False
+    cc1_sorted = sorted(cc1, key=itemgetter('attribute', 'operation', 'value'))
+    cc2_sorted = sorted(cc2, key=itemgetter('attribute', 'operation', 'value'))
+    pairs = zip(cc1_sorted, cc2_sorted)
+    return all(p1 == p2 for p1, p2 in pairs)
+
+
+def equal(c1, c2):
+    """
+    Check whether two constrains are identical.
+
+    :param c1: first logical constraint
+    :type c1:  list of lists of dicts
+    :param c2: second logical constraint
+    :type c2:  list of lists of dicts
+    :return: True if c1 completely equals c2, False otherwise
+    """
+    if len(c1) != len(c2):
+        return False
+    for conjunction_clause_1 in c1:
+        for conjunction_clause_2 in c2:
+            if _conjunction_clauses_equal(conjunction_clause_1,
+                                          conjunction_clause_2):
                 break
         else:
             return False

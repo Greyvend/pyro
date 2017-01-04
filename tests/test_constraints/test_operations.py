@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from pyro.constraints.operations import project, is_domain_included, \
-    _is_predicate_domain_included
+    _is_predicate_domain_included, equal, _conjunction_clauses_equal
 
 
 class TestProject(TestCase):
@@ -151,3 +151,112 @@ class TestIsDomainIncluded(TestCase):
 
         self.assertFalse(is_domain_included(c1, c2))
         self.assertTrue(is_domain_included(c2, c1))
+
+
+class TestConjunctionClausesEqual(TestCase):
+    def test_different_length(self):
+        c1 = [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179},
+             {'attribute': 'A3', 'operation': '<=', 'value': 13}]
+        c2 = [{'attribute': 'A1', 'operation': '=', 'value': 3},
+              {'attribute': 'A2', 'operation': '<', 'value': 179}]
+
+        self.assertFalse(_conjunction_clauses_equal(c1, c2))
+        self.assertFalse(_conjunction_clauses_equal(c2, c1))
+
+    def test_different_attributes(self):
+        c1 = [{'attribute': 'A1', 'operation': '=', 'value': 3},
+              {'attribute': 'A2', 'operation': '<', 'value': 179}]
+        c2 = [{'attribute': 'A1', 'operation': '=', 'value': 3},
+              {'attribute': 'A3', 'operation': '<', 'value': 179}]
+
+        self.assertFalse(_conjunction_clauses_equal(c1, c2))
+        self.assertFalse(_conjunction_clauses_equal(c2, c1))
+
+    def test_different_order(self):
+        """
+        Field and predicate order shouldn't matter for clause equality
+        """
+        c1 = [{'operation': '=', 'attribute': 'A3', 'value': 3},
+              {'value': [1, 5, 12], 'attribute': 'A1', 'operation': 'IN'}]
+        c2 = [{'attribute': 'A1', 'operation': 'IN', 'value': [1, 5, 12]},
+              {'attribute': 'A3', 'operation': '=', 'value': 3}]
+
+        self.assertTrue(_conjunction_clauses_equal(c1, c2))
+        self.assertTrue(_conjunction_clauses_equal(c2, c1))
+
+
+class TestEqual(TestCase):
+    def test_empty_constraint(self):
+        c1 = [[{'attribute': 'A1', 'operation': '=', 'value': 3}]]
+        c2 = []
+
+        self.assertFalse(equal(c1, c2))
+        self.assertFalse(equal(c2, c1))
+
+    def test_empty_both_constraints(self):
+        c1 = []
+        c2 = []
+
+        self.assertTrue(equal(c1, c2))
+        self.assertTrue(equal(c2, c1))
+
+    def test_single_conjunction_clause_successful(self):
+        c1 = [
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179}]
+        ]
+        c2 = [
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179}]
+        ]
+
+        self.assertTrue(equal(c1, c2))
+        self.assertTrue(equal(c2, c1))
+
+    def test_single_conjunction_clause_different_attributes(self):
+        c1 = [
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179}]
+        ]
+        c2 = [
+            [{'attribute': 'A2', 'operation': '<>', 'value': 16},
+             {'attribute': 'A3', 'operation': '<=', 'value': 13}]
+        ]
+
+        self.assertFalse(equal(c1, c2))
+        self.assertFalse(equal(c2, c1))
+
+    def test_multiple_conjunction_clauses_one_different(self):
+        c1 = [
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A3', 'operation': '<', 'value': 179}],
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179}],
+        ]
+        c2 = [
+            [{'attribute': 'A2', 'operation': '<>', 'value': 16},
+             {'attribute': 'A3', 'operation': '<=', 'value': 13}],
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A3', 'operation': '<', 'value': 179}]
+        ]
+
+        self.assertFalse(equal(c1, c2))
+        self.assertFalse(equal(c2, c1))
+
+    def test_multiple_conjunction_clauses_successful(self):
+        c1 = [
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A3', 'operation': '<', 'value': 179}],
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179}]
+        ]
+        c2 = [
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A2', 'operation': '<', 'value': 179}],
+            [{'attribute': 'A1', 'operation': '=', 'value': 3},
+             {'attribute': 'A3', 'operation': '<', 'value': 179}]
+        ]
+
+        self.assertTrue(equal(c1, c2))
+        self.assertTrue(equal(c2, c1))

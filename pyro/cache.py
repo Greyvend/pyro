@@ -2,7 +2,7 @@ import json
 from json import JSONDecodeError
 
 from pyro import db
-from pyro.constraints.operations import is_domain_included
+from pyro.constraints.operations import is_domain_included, equal
 from pyro.utils import SQLAlchemySerializer
 
 
@@ -60,6 +60,17 @@ class Cache:
                 self._active_entry = entry
                 self.enabled = True
                 return
+
+    def full_match(self, context, constraint):
+        for entry in self._config:
+            context_names = map(lambda r: r['name'], context)
+            entry_names = map(lambda r: r['name'], entry['context'])
+            contexts_equal = set(entry_names) == set(context_names)
+            if not contexts_equal:
+                continue
+            if equal(constraint, entry['constraint']):
+                return entry['relation']
+        return None
 
     def contains(self, constraint):
         """

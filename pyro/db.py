@@ -308,7 +308,6 @@ def count_constrained(engine, relation_name, constraint):
     :param relation_name: relation to scan
     :param constraint: logical constraint in DNF
     """
-    # s = select([count()]).select_from(table(relation_name)).where
     bool_clause = _to_bool_clause(constraint)
     s = select(columns=[count()], from_obj=table(relation_name)).where(
         bool_clause)

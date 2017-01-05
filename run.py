@@ -9,7 +9,9 @@ from pyro import representation
 from pyro.utils import relation_name, assemble_list, attribute_name
 
 
-logging.basicConfig(level=logging.INFO)
+format_str = '%(asctime)s %(levelname)s: %(message)s ' \
+             '[%(pathname)s:%(lineno)d]'
+logging.basicConfig(level=logging.INFO, format=format_str)
 
 
 if __name__ == '__main__':

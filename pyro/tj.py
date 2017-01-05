@@ -129,6 +129,15 @@ def compose_table_name():
     return 'TJ_' + random_str(10)
 
 
+def create_tj_schema(context, dependencies):
+    tj_name = compose_table_name()
+    full_schema = get_attributes(context, dependencies)
+    # add vector attribute holding information about participating relations
+    full_schema.update({VECTOR_ATTRIBUTE: String(VECTOR_MAX_LENGTH)})
+    relation = {'name': tj_name, 'attributes': full_schema}
+    return relation
+
+
 def build(context, dependencies, constraint, source, cube, cache_file):
     """
     Build Table of Joins and write it to the destination DB
@@ -146,13 +155,7 @@ def build(context, dependencies, constraint, source, cube, cache_file):
     if cached_tj:
         return cached_tj
 
-    # create TJ in destination DB
-    tj_name = compose_table_name()
-    attributes = get_attributes(context, dependencies)
-    # add vector attribute holding information about participating relations
-    full_schema = attributes.copy()
-    full_schema.update({VECTOR_ATTRIBUTE: String(VECTOR_MAX_LENGTH)})
-    tj = {'name': tj_name, 'attributes': full_schema}
+    tj = create_tj_schema(context, dependencies)
     db.create_table(cube, tj)
 
     cache.enable(context, constraint)
@@ -171,6 +174,8 @@ def build(context, dependencies, constraint, source, cube, cache_file):
         if cache.enabled and cache.contains_context(relations):
             cache.restore(tj, projected_constraint, filter_constraint)
         else:
+            attributes = tj['attributes'].copy()
+            del attributes[VECTOR_ATTRIBUTE]
             join_data = db.natural_join(source, relations, attributes)
             # not using functional approach here to avoid data copying
             for row in join_data:

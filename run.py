@@ -1,31 +1,29 @@
-import json
 import logging
 from operator import itemgetter
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
 
-from pyro import db, tj, transformation
-from pyro import representation
+from pyro import db, tj, transformation, representation, cfg
 from pyro.utils import relation_name, assemble_list, attribute_name
 
 
 if __name__ == '__main__':
-    with open('config.json') as config_file:
-        config = json.load(config_file)
+    # load configuration
+    cfg.load('config.json')
 
     # setup logging
-    logging.basicConfig(**config['logging'])
+    logging.basicConfig(**cfg.settings['logging'])
 
     # connect to source Database
     logging.info('Connecting to the source DB: {}'.format(
-        config['source_db']['database']))
-    source_engine = create_engine(str(URL(**config['source_db'])))
+        cfg.settings['source_db']['database']))
+    source_engine = create_engine(str(URL(**cfg.settings['source_db'])))
 
     relations, dependencies = db.get_schema(source_engine)
 
     # get multi valued dependencies from the config
-    mvd = config.get('multi valued dependencies', [])
+    mvd = cfg.settings.get('multi valued dependencies', [])
     # transform lists of attributes to sets of attributes
     mvd = [{part: set(attributes) for part, attributes in dep.items()}
            for dep in mvd]
@@ -33,9 +31,9 @@ if __name__ == '__main__':
 
     # get main attributes
     dimension_attributes = [list(map(attribute_name, d['attributes']))
-                            for d in config['dimensions']]
-    measure_relation = relation_name(config['measure'])
-    measure_attribute = attribute_name(config['measure'])
+                            for d in cfg.settings['dimensions']]
+    measure_relation = relation_name(cfg.settings['measure'])
+    measure_attribute = attribute_name(cfg.settings['measure'])
 
     # Start transformation
     # build contexts
@@ -43,7 +41,7 @@ if __name__ == '__main__':
     contexts = []
     base_total = {measure_relation}
     # build dimension contexts
-    for dimension in config['dimensions']:
+    for dimension in cfg.settings['dimensions']:
         logging.info('Building context for dimension "{}"'.format(
             dimension['name']))
         # extract relation names from extended attribute names in config
@@ -54,7 +52,7 @@ if __name__ == '__main__':
         contexts.append(context)
 
     # build application context
-    if config['app_context']:
+    if cfg.settings['app_context']:
         logging.info('Building application context')
         try:
             app_context = next(transformation.contexts(relations, base_total,
@@ -73,15 +71,15 @@ if __name__ == '__main__':
 
     # get logical constraints
     constraints = list(map(lambda d: d.get('constraint', []),
-                           config['dimensions']))
+                           cfg.settings['dimensions']))
     constraints.append([])  # no application constraint will be used
 
-    cache_file_path = config.get('cache_file', 'cache.json')
+    cache_file_path = cfg.settings.get('cache_file', 'cache.json')
 
     # connect to the output DB
     logging.info('Connecting to the cube DB: {}'.format(
-        config['cube_db']['database']))
-    cube_engine = create_engine(URL(**config['cube_db']))
+        cfg.settings['cube_db']['database']))
+    cube_engine = create_engine(URL(**cfg.settings['cube_db']))
 
     table_names = []
     for context, constraint, dimension in zip(contexts, constraints,
@@ -97,4 +95,4 @@ if __name__ == '__main__':
 
     logging.info('Writing the result table to the file')
     representation.create(cube_engine, table_names, dimension_attributes,
-                          measure_attribute, config['output_file'])
+                          measure_attribute, cfg.settings['output_file'])

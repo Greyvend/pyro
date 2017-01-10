@@ -11,7 +11,7 @@ from sqlalchemy.types import Integer, _Binary, LargeBinary
 
 from pyro.utils import containing_relation, common_keys, chunks
 # noinspection PyUnresolvedReferences
-from pyro import compilers
+from pyro import compilers, cfg
 
 
 def _transform_column_type(column_type):
@@ -214,7 +214,8 @@ def delete_rows(engine, relation, rows):
     _rows = list(rows)
     if not _rows:
         return
-    row_chunks = list(chunks(_rows, 200))
+    row_chunks = list(chunks(_rows, cfg.settings.get('row_delete_chunk_size',
+                                                     60)))
     for chunk in row_chunks:
         whereclause = or_(and_(column(k) == row[k] for k in row)
                           for row in chunk)

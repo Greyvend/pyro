@@ -1,5 +1,6 @@
 import json
 import logging
+from operator import itemgetter
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
@@ -9,14 +10,12 @@ from pyro import representation
 from pyro.utils import relation_name, assemble_list, attribute_name
 
 
-format_str = '%(asctime)s %(levelname)s: %(message)s ' \
-             '[%(pathname)s:%(lineno)d]'
-logging.basicConfig(level=logging.INFO, format=format_str)
-
-
 if __name__ == '__main__':
     with open('config.json') as config_file:
         config = json.load(config_file)
+
+    # setup logging
+    logging.basicConfig(**config['logging'])
 
     # connect to source Database
     logging.info('Connecting to the source DB: {}'.format(
@@ -88,7 +87,7 @@ if __name__ == '__main__':
     for context, constraint, dimension in zip(contexts, constraints,
                                               dimension_attributes + [[]]):
         logging.info('Building Table of Joins for the context {}'.format(
-            context))
+            list(map(itemgetter('name'), context))))
         table_of_joins = tj.build(context, dependencies, constraint,
                                   source_engine, cube_engine, cache_file_path)
         table_names.append(table_of_joins['name'])

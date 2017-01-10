@@ -1,3 +1,6 @@
+from operator import itemgetter
+
+import logging
 from sqlalchemy import String
 
 from pyro import db
@@ -9,6 +12,8 @@ from pyro.utils import all_attributes, process_value, random_str
 VECTOR_ATTRIBUTE = 'g'
 VECTOR_SEPARATOR = ';separator;'
 VECTOR_MAX_LENGTH = 10000
+
+logger = logging.getLogger(__name__)
 
 
 def get_attributes(context, dependencies):
@@ -166,6 +171,8 @@ def build(context, dependencies, constraint, source, cube, cache_file):
     if context not in relations_packs:
         relations_packs.append(context)
     for relations in relations_packs:
+        logger.debug('Using relations {}'.format(list(map(itemgetter('name'),
+                                                          relations))))
         vector = encode_vector(relations)
         projected_constraint = constraint_operations.project(
             constraint, all_attributes(relations))

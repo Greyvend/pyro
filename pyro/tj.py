@@ -164,7 +164,6 @@ def build(context, dependencies, constraint, source, cube, cache_file):
     db.create_table(cube, tj)
 
     cache.enable(context, constraint)
-    cache.add(tj, context, constraint)
 
     # fill TJ with data
     relations_packs = list(lossless_combinations(context, dependencies))
@@ -194,4 +193,5 @@ def build(context, dependencies, constraint, source, cube, cache_file):
             if projected_constraint:
                 db.delete_unsatisfied(cube, tj, projected_constraint,
                                       filter_constraint)
+    cache.add(tj, context, constraint)
     return tj

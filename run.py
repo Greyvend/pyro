@@ -10,7 +10,7 @@ from pyro.utils import relation_name, assemble_list, attribute_name
 
 if __name__ == '__main__':
     # load configuration
-    cfg.load('config.json')
+    cfg.load('config-2.json')
 
     # setup logging
     logging.basicConfig(**cfg.settings['logging'])
